@@ -1,0 +1,62 @@
+version: '3.1'
+
+services:
+  lucis_db:
+    image: mysql:8.0
+    container_name: "lucis_db"
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - ${DB_PORT}:3306
+    # volumes:
+    #   - ../db_data:/var/lib/mysql/
+    #   - ./db/:/docker-entrypoint-initdb.d/
+      
+  lucis_redis:
+    image: "redis:6.2"
+    container_name: "lucis_redis"
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - ${REDIS_PORT}:6379
+    
+  lucis_api:
+    depends_on:
+      - "lucis_db"
+      - "lucis_redis"
+    build:
+      context: ../
+      dockerfile: deploy/Dockerfile
+    image: lucis_api:1.0
+    container_name: "lucis_api"
+    restart: always
+    volumes:
+      - ../logs/:/app/logs/
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+
+  lucis_admin:
+    depends_on:
+      - "lucis_db"
+      - "lucis_redis"
+      - "lucis_api"
+    build:
+      context: ../
+      dockerfile: deploy/DockerfileAdmin
+    image: lucis_admin:1.0
+    container_name: "lucis_admin"
+    restart: always
+    volumes:
+      - ../logs_admin/:/app/logs/
+    ports:
+      - ${ADMIN_PORT}:${ADMIN_PORT}
+
+networks:
+  default:
+    name: lucis_network
+    driver: bridge

@@ -1,0 +1,6 @@
+example.com {   
+    tls /etc/caddy/cer.pem /etc/caddy/cer.key  
+    root * /home/me/mysite
+    file_server                                                                                                                                                                  
+    reverse_proxy /graphql app:3000   
+}

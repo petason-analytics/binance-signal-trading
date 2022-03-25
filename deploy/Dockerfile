@@ -1,0 +1,16 @@
+FROM node:16.10.0 AS builder
+
+ENV APP_HOME=/home/app
+WORKDIR $APP_HOME
+# COPY --chown=app:app package.json $APP_HOME/
+COPY package.json $APP_HOME/
+RUN npm install -g prisma
+RUN npm install
+COPY prisma $APP_HOME/
+RUN prisma generate
+COPY . $APP_HOME
+RUN npm run build
+EXPOSE ${APP_PORT}
+
+#CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start:launchpad"]

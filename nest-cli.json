@@ -1,0 +1,75 @@
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/trade/src",
+  "monorepo": true,
+  "root": "apps/trade",
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "apps/trade/tsconfig.app.json"
+  },
+  "projects": {
+    "trade": {
+      "type": "application",
+      "root": "apps/trade",
+      "entryFile": "main",
+      "sourceRoot": "apps/trade/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/trade/tsconfig.app.json"
+      }
+    },
+    "launchpad": {
+      "type": "application",
+      "root": "apps/launchpad",
+      "entryFile": "main",
+      "sourceRoot": "apps/launchpad/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/launchpad/tsconfig.app.json"
+      }
+    },
+    "admin": {
+      "type": "application",
+      "root": "apps/admin",
+      "entryFile": "main",
+      "sourceRoot": "apps/admin/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/admin/tsconfig.app.json"
+      }
+    },
+    "prisma": {
+      "type": "library",
+      "root": "libs/prisma",
+      "entryFile": "index",
+      "sourceRoot": "libs/prisma/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/prisma/tsconfig.lib.json"
+      }
+    },
+    "helper": {
+      "type": "library",
+      "root": "libs/helper",
+      "entryFile": "index",
+      "sourceRoot": "libs/helper/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/helper/tsconfig.lib.json"
+      }
+    },
+    "acl": {
+      "type": "library",
+      "root": "libs/acl",
+      "entryFile": "index",
+      "sourceRoot": "libs/acl/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/acl/tsconfig.lib.json"
+      }
+    },
+    "blockchain": {
+      "type": "library",
+      "root": "libs/blockchain",
+      "entryFile": "index",
+      "sourceRoot": "libs/blockchain/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/blockchain/tsconfig.lib.json"
+      }
+    }
+  }
+}

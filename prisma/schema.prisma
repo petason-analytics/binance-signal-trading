@@ -1,0 +1,272 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+generator nestgraphql {
+  provider = "node node_modules/prisma-nestjs-graphql"
+  output   = "../libs/prisma/src/@generated/prisma-nestjs-graphql"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model BoxCampaignWhitelist {
+  id               Int         @id @default(autoincrement())
+  box_campaign_uid String      @db.VarChar(45)
+  user_id          Int
+  campaign         BoxCampaign @relation(fields: [box_campaign_uid], references: [uid])
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+
+  @@unique([user_id, box_campaign_uid])
+  @@index([box_campaign_uid], map: "fk_box_campaign_whitelists_box_campaigns1_idx")
+  @@index([user_id], map: "fk_box_campaign_whitelists_users1_idx")
+  @@map("box_campaign_whitelists")
+}
+
+model Game {
+  uid           String        @id @default(cuid())
+  name          String?       @db.VarChar(45)
+  desc          String?       @db.Text
+  desc_team     String?       @db.Text
+  logo          String?       @db.VarChar(255)
+  website       String?       @db.VarChar(255)
+  whitepaper    String?       @db.VarChar(255)
+  pitchdeck     String?       @db.VarChar(255)
+  trailer_video String?       @db.VarChar(255)
+  facebook      String?       @db.VarChar(255)
+  twitter       String?       @db.VarChar(255)
+  telegram      String?       @db.VarChar(255)
+  youtube       String?       @db.VarChar(255)
+  discord       String?       @db.VarChar(255)
+  boxCampaigns  BoxCampaign[]
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+
+  @@map("games")
+}
+
+enum BoxCampaignsStatus {
+  UPCOMING
+  OPENING
+  CLOSED
+
+  @@map("box_campaigns_status")
+}
+
+model BoxCampaign {
+  uid                String                  @id @default(cuid())
+  game_uid           String                  @db.VarChar(45)
+  name               String?                 @db.VarChar(255)
+  desc               String?                 @db.Text
+  rules              String?                 @db.VarChar(1024)
+  cover_img          String?                 @db.VarChar(255)
+  banner_img         String?                 @db.VarChar(255)
+  rounds             Json?
+  status             BoxCampaignsStatus?
+  opening_at         DateTime                @default(now()) @db.DateTime(0)
+  start              DateTime                @default(now()) @db.DateTime(0)
+  end                DateTime                @default(now()) @db.DateTime(0)
+  highlight          String?                 @db.VarChar(100)
+  spotlight_position Int?
+  game               Game                    @relation(fields: [game_uid], references: [uid])
+  subscribeCampaign  BoxCampaignSubscribes[]
+  boxTypes           BoxType[]
+  whitelists         BoxCampaignWhitelist[]
+  buyHistory         BoxCampaignBuyHistory[]
+  created_at         DateTime                @default(now())
+  updated_at         DateTime                @updatedAt
+
+  @@index([opening_at], map: "box_campaigns_opening_at_idx")
+  @@index([end], map: "box_campaigns_end_idx")
+  @@index([game_uid], map: "fk_box_campaigns_games_idx")
+  @@map("box_campaigns")
+}
+
+model BoxPrice {
+  uid              String       @id @default(cuid())
+  box_type_uid     String       @db.VarChar(45)
+  currency_uid     String       @db.VarChar(45)
+  price            Decimal?     @db.Decimal(20, 8)
+  contract_address String?      @db.VarChar(45)
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+  contract         BoxContract? @relation(fields: [contract_address], references: [address])
+  boxType          BoxType      @relation(fields: [box_type_uid], references: [uid])
+  currency         Currency     @relation(fields: [currency_uid], references: [uid])
+
+  @@unique([box_type_uid, currency_uid])
+  @@index([box_type_uid], map: "fk_box_prices_box_types1_idx")
+  @@map("box_prices")
+}
+
+model BoxType {
+  uid              String      @id @default(cuid())
+  box_campaign_uid String      @db.VarChar(45)
+  name             String?     @db.VarChar(45)
+  desc             String?     @db.VarChar(512)
+  total_amount     Int
+  sold_amount      Int         @default(0)
+  thumb_img        String?     @db.VarChar(255)
+  series_content   String?     @db.VarChar(1024)
+  limit_per_user   Int?
+  prices           BoxPrice[]
+  campaign         BoxCampaign @relation(fields: [box_campaign_uid], references: [uid])
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+
+  @@index([box_campaign_uid], map: "fk_box_types_box_campaigns1_idx")
+  @@map("box_types")
+}
+
+enum ChainSymbol {
+  ETH
+  BSC
+  POLYGON
+  AVAX
+  FLOW
+  NEAR
+  POLKADOT
+  SOLANA
+}
+
+model Chain {
+  symbol     ChainSymbol   @id
+  name       String?       @db.VarChar(45)
+  icon       String?       @db.VarChar(255)
+  chain_id   Int?
+  rpc_url    String?
+  status     Boolean?
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+  currencies Currency[]
+  nftBox     BoxContract[]
+  // boxPrices  BoxPrice[]
+
+  @@map("chains")
+}
+
+model Currency {
+  uid          String      @id @default(cuid())
+  symbol       String      @db.VarChar(45)
+  name         String?     @db.VarChar(45)
+  icon         String?     @db.VarChar(255)
+  chain_symbol ChainSymbol
+  address      String      @db.VarChar(45)
+  owner        String?     @db.VarChar(45)
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+  chain        Chain       @relation(fields: [chain_symbol], references: [symbol])
+  boxPrices    BoxPrice[]
+
+  @@map("currencies")
+}
+
+model BoxContract {
+  uid             String      @id @default(cuid())
+  address         String      @unique @db.VarChar(45)
+  owner           String?     @db.VarChar(45)
+  chain_symbol    ChainSymbol
+  currency_symbol String?     @db.VarChar(45) // token use to buy box
+  admin_address   String?     @db.VarChar(45) // admin address make tx (ex: buyBox)
+  admin_prv_key   String?     @db.VarChar(255)
+  is_transfered   Boolean     @default(false)
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+  chain           Chain       @relation(fields: [chain_symbol], references: [symbol])
+  boxPrices       BoxPrice[]
+
+  @@map("nft_box_contracts")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
+
+model User {
+  id            Int                     @id @default(autoincrement())
+  role          UserRole                @default(CUSTOMER)
+  email         String?                 @unique @db.VarChar(45)
+  code          String                  @unique @db.VarChar(45)
+  address       String                  @unique @db.VarChar(45)
+  name          String?                 @unique @db.VarChar(45)
+  password      String?                 @db.VarChar(255)
+  ref_code      String?                 @db.VarChar(45)
+  status        UserStatus              @default(ACTIVE)
+  profile       UserProfile?
+  enable_notify BoxCampaignSubscribes[]
+  created_at    DateTime                @default(now())
+  updated_at    DateTime                @updatedAt
+
+  @@map("users")
+}
+
+model UserProfile {
+  user_id    Int      @id
+  full_name  String?  @db.VarChar(45)
+  twitter    String?  @db.VarChar(255)
+  facebook   String?  @db.VarChar(255)
+  telegram   String?  @db.VarChar(255)
+  discord    String?  @db.VarChar(255)
+  phone      String?  @unique @db.VarChar(45)
+  avatar     String?  @db.VarChar(255)
+  cover      String?  @db.VarChar(255)
+  user       User     @relation(fields: [user_id], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("user_profiles")
+}
+
+model BoxCampaignSubscribes {
+  id               Int         @id @default(autoincrement())
+  user_id          Int
+  box_campaign_uid String      @db.VarChar(45)
+  enable_notify    Boolean     @default(false)
+  user             User        @relation(fields: [user_id], references: [id])
+  box_campaign     BoxCampaign @relation(fields: [box_campaign_uid], references: [uid])
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+
+  @@map("box_campaign_subscribes")
+}
+
+enum BoxCampaignBuyHistoriesStatus {
+  PENDING
+  PROCESSING
+  CONFIRMING
+  SUCCEED
+  FAILED
+
+  @@map("box_campaign_buy_histories_status")
+}
+
+model BoxCampaignBuyHistory {
+  id               Int                           @id @default(autoincrement())
+  user_id          Int
+  box_campaign_uid String                        @db.VarChar(45)
+  round            Json?
+  quantity         Int?
+  box_price_uid    String                        @db.VarChar(45)
+  box_type_uid     String                        @db.VarChar(45)
+  tx_hash          String?                       @db.VarChar(255)
+  status           BoxCampaignBuyHistoriesStatus @default(PENDING)
+  box_price        Json?
+  data             String?                       @db.VarChar(512)
+  created_at       DateTime                      @default(now())
+  updated_at       DateTime                      @updatedAt
+  box              BoxCampaign                   @relation(fields: [box_campaign_uid], references: [uid])
+
+  @@index([user_id], map: "user_id")
+  @@index([user_id, box_type_uid, status], map: "user_id_box_type_uid_status")
+  @@map("box_campaign_buy_histories")
+}

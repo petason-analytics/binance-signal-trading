@@ -1,0 +1,320 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type UserProfile {
+  user_id: ID!
+  full_name: String
+  twitter: String
+  facebook: String
+  telegram: String
+  discord: String
+  phone: String
+  avatar: String
+  cover: String
+  user: User!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type GameCount {
+  boxCampaigns: Int!
+}
+
+type Game {
+  uid: ID!
+  name: String
+  desc: String
+  desc_team: String
+  logo: String
+  website: String
+  whitepaper: String
+  pitchdeck: String
+  trailer_video: String
+  facebook: String
+  twitter: String
+  telegram: String
+  youtube: String
+  discord: String
+  boxCampaigns: [BoxCampaign!]
+  created_at: DateTime!
+  updated_at: DateTime!
+  _count: GameCount!
+}
+
+type CurrencyCount {
+  boxPrices: Int!
+}
+
+type Currency {
+  uid: ID!
+  symbol: String!
+  name: String
+  icon: String
+  chain_symbol: ChainSymbol!
+  address: String!
+  owner: String
+  created_at: DateTime!
+  updated_at: DateTime!
+  chain: Chain!
+  boxPrices: [BoxPrice!]
+  _count: CurrencyCount!
+}
+
+enum ChainSymbol {
+  ETH
+  BSC
+  POLYGON
+  AVAX
+  FLOW
+  NEAR
+  POLKADOT
+  SOLANA
+}
+
+type ChainCount {
+  currencies: Int!
+  nftBox: Int!
+}
+
+type Chain {
+  symbol: ChainSymbol!
+  name: String
+  icon: String
+  chain_id: Int
+  rpc_url: String
+  status: Boolean
+  created_at: DateTime!
+  updated_at: DateTime!
+  currencies: [Currency!]
+  nftBox: [BoxContract!]
+  _count: ChainCount!
+}
+
+type BoxContractCount {
+  boxPrices: Int!
+}
+
+type BoxContract {
+  uid: ID!
+  address: String!
+  owner: String
+  chain_symbol: ChainSymbol!
+  currency_symbol: String
+  admin_address: String
+  admin_prv_key: String
+  is_transfered: Boolean!
+  created_at: DateTime!
+  updated_at: DateTime!
+  chain: Chain!
+  boxPrices: [BoxPrice!]
+  _count: BoxContractCount!
+}
+
+type BoxPrice {
+  uid: ID!
+  box_type_uid: String!
+  currency_uid: String!
+  price: Decimal
+  contract_address: String
+  created_at: DateTime!
+  updated_at: DateTime!
+  contract: BoxContract
+  boxType: BoxType!
+  currency: Currency!
+}
+
+"""An arbitrary-precision Decimal type"""
+scalar Decimal
+
+type BoxTypeCount {
+  prices: Int!
+}
+
+type BoxType {
+  uid: ID!
+  box_campaign_uid: String!
+  name: String
+  desc: String
+  total_amount: Int!
+  sold_amount: Int!
+  thumb_img: String
+  series_content: String
+  limit_per_user: Int
+  prices: [BoxPrice!]
+  campaign: BoxCampaign!
+  created_at: DateTime!
+  updated_at: DateTime!
+  _count: BoxTypeCount!
+}
+
+type BoxCampaignWhitelist {
+  id: ID!
+  box_campaign_uid: String!
+  user_id: Int!
+  campaign: BoxCampaign!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type BoxCampaignBuyHistory {
+  id: ID!
+  user_id: Int!
+  box_campaign_uid: String!
+  round: JSON
+  quantity: Int
+  box_price_uid: String!
+  box_type_uid: String!
+  tx_hash: String
+  status: BoxCampaignBuyHistoriesStatus!
+  box_price: JSON
+  data: String
+  created_at: DateTime!
+  updated_at: DateTime!
+  box: BoxCampaign!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+enum BoxCampaignBuyHistoriesStatus {
+  PENDING
+  PROCESSING
+  CONFIRMING
+  SUCCEED
+  FAILED
+}
+
+type BoxCampaignCount {
+  subscribeCampaign: Int!
+  boxTypes: Int!
+  whitelists: Int!
+  buyHistory: Int!
+}
+
+type BoxCampaign {
+  uid: ID!
+  game_uid: String!
+  name: String
+  desc: String
+  rules: String
+  cover_img: String
+  banner_img: String
+  rounds: JSON
+  status: BoxCampaignsStatus
+  opening_at: DateTime!
+  start: DateTime!
+  end: DateTime!
+  highlight: String
+  spotlight_position: Int
+  game: Game!
+  subscribeCampaign: [BoxCampaignSubscribes!]
+  boxTypes: [BoxType!]
+  whitelists: [BoxCampaignWhitelist!]
+  buyHistory: [BoxCampaignBuyHistory!]
+  created_at: DateTime!
+  updated_at: DateTime!
+  _count: BoxCampaignCount!
+}
+
+enum BoxCampaignsStatus {
+  UPCOMING
+  OPENING
+  CLOSED
+}
+
+type BoxCampaignSubscribes {
+  id: ID!
+  user_id: Int!
+  box_campaign_uid: String!
+  enable_notify: Boolean!
+  user: User!
+  box_campaign: BoxCampaign!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type UserCount {
+  enable_notify: Int!
+}
+
+type User {
+  id: ID!
+  role: UserRole!
+  email: String
+  code: String!
+  address: String!
+  name: String
+  password: String
+  ref_code: String
+  status: UserStatus!
+  profile: UserProfile
+  enable_notify: [BoxCampaignSubscribes!]
+  created_at: DateTime!
+  updated_at: DateTime!
+  _count: UserCount!
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
+
+type UserGraphql {
+  id: ID!
+  role: UserRole!
+  email: String
+  code: String!
+  address: String!
+  name: String
+  ref_code: String
+  status: UserStatus!
+  profile: UserProfile
+  enable_notify: [BoxCampaignSubscribes!]
+  created_at: DateTime!
+  updated_at: DateTime!
+  _count: UserCount!
+}
+
+type Query {
+  me: UserGraphql
+}
+
+type Mutation {
+  updateProfile(data: ProfileUpdateInput!): UserProfile
+  verifyEmail(email: String!): Boolean
+  updateEmail(email: String!): Boolean
+}
+
+input ProfileUpdateInput {
+  full_name: NullableStringFieldUpdateOperationsInput
+  twitter: NullableStringFieldUpdateOperationsInput
+  facebook: NullableStringFieldUpdateOperationsInput
+  telegram: NullableStringFieldUpdateOperationsInput
+  discord: NullableStringFieldUpdateOperationsInput
+  phone: NullableStringFieldUpdateOperationsInput
+  avatar: NullableStringFieldUpdateOperationsInput
+  cover: NullableStringFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input NullableStringFieldUpdateOperationsInput {
+  set: String
+}
+
+input DateTimeFieldUpdateOperationsInput {
+  set: DateTime
+}

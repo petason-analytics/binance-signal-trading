@@ -1,0 +1,2189 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type UserProfile {
+  user_id: ID!
+  full_name: String
+  twitter: String
+  facebook: String
+  telegram: String
+  discord: String
+  phone: String
+  avatar: String
+  cover: String
+  enable_notify: Boolean
+  user: User!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type User {
+  id: ID!
+  role: UserRole!
+  email: String
+  code: String!
+  address: String!
+  name: String
+  password: String
+  ref_code: String
+  status: UserStatus!
+  profile: UserProfile
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
+
+type UserGraphql {
+  id: ID!
+  role: UserRole!
+  email: String
+  code: String!
+  address: String!
+  name: String
+  ref_code: String
+  status: UserStatus!
+  profile: UserProfile
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type GBoxCampaignRound {
+  id: Int!
+  name: String!
+  description: String
+  start: String!
+  end: String!
+  is_whitelist: Boolean
+  require_whitelist: Boolean
+
+  """whitelist limit"""
+  participant_limit: Int
+
+  """Number of box can buy per phase, current not use"""
+  box_limit_this_phase: Int
+}
+
+type AuthGraphql {
+  token: String!
+  user: UserGraphql!
+}
+
+type GameCount {
+  boxCampaigns: Int!
+}
+
+type Game {
+  uid: ID!
+  name: String
+  desc: String
+  desc_team: String
+  logo: String
+  website: String
+  whitepaper: String
+  pitchdeck: String
+  trailer_video: String
+  facebook: String
+  twitter: String
+  telegram: String
+  youtube: String
+  discord: String
+  boxCampaigns: [BoxCampaign!]
+  created_at: DateTime!
+  updated_at: DateTime!
+  _count: GameCount!
+}
+
+type CurrencyCount {
+  boxPrices: Int!
+}
+
+type Currency {
+  uid: ID!
+  symbol: String!
+  name: String
+  icon: String
+  chain_symbol: ChainSymbol!
+  address: String!
+  owner: String
+  created_at: DateTime!
+  updated_at: DateTime!
+  chain: Chain!
+  boxPrices: [BoxPrice!]
+  _count: CurrencyCount!
+}
+
+enum ChainSymbol {
+  ETH
+  BSC
+  POLYGON
+  AVAX
+  FLOW
+  NEAR
+  POLKADOT
+  SOLANA
+}
+
+type ChainCount {
+  currencies: Int!
+  nftBox: Int!
+}
+
+type Chain {
+  symbol: ChainSymbol!
+  name: String
+  icon: String
+  chain_id: Int
+  rpc_url: String
+  status: Boolean
+  created_at: DateTime!
+  updated_at: DateTime!
+  currencies: [Currency!]
+  nftBox: [BoxContract!]
+  _count: ChainCount!
+}
+
+type BoxContractCount {
+  boxPrices: Int!
+}
+
+type BoxContract {
+  uid: ID!
+  address: String!
+  owner: String
+  chain_symbol: ChainSymbol!
+  currency_symbol: String
+  admin_address: String
+  admin_prv_key: String
+  is_transfered: Boolean!
+  created_at: DateTime!
+  updated_at: DateTime!
+  chain: Chain!
+  boxPrices: [BoxPrice!]
+  _count: BoxContractCount!
+}
+
+type BoxPrice {
+  uid: ID!
+  box_type_uid: String!
+  currency_uid: String!
+  price: Decimal
+  contract_address: String
+  created_at: DateTime!
+  updated_at: DateTime!
+  contract: BoxContract
+  boxType: BoxType!
+  currency: Currency!
+}
+
+"""An arbitrary-precision Decimal type"""
+scalar Decimal
+
+type BoxTypeCount {
+  prices: Int!
+}
+
+type BoxType {
+  uid: ID!
+  box_campaign_uid: String!
+  name: String
+  desc: String
+  total_amount: Int!
+  sold_amount: Int!
+  thumb_img: String
+  series_content: String
+  limit_per_user: Int
+  prices: [BoxPrice!]
+  campaign: BoxCampaign!
+  created_at: DateTime!
+  updated_at: DateTime!
+  _count: BoxTypeCount!
+}
+
+type BoxCampaignWhitelist {
+  id: ID!
+  box_campaign_uid: String!
+  user_id: Int!
+  campaign: BoxCampaign!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type BoxCampaignBuyHistory {
+  id: ID!
+  user_id: Int!
+  box_campaign_uid: String!
+  round: JSON
+  quantity: Int
+  box_price_uid: String!
+  box_type_uid: String!
+  tx_hash: String
+  status: BoxCampaignBuyHistoriesStatus!
+  box_price: JSON
+  data: String
+  created_at: DateTime!
+  updated_at: DateTime!
+  box: BoxCampaign!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+enum BoxCampaignBuyHistoriesStatus {
+  PENDING
+  PROCESSING
+  CONFIRMING
+  SUCCEED
+  FAILED
+}
+
+type BoxCampaignCount {
+  boxTypes: Int!
+  whitelists: Int!
+  buyHistory: Int!
+}
+
+type BoxCampaign {
+  uid: ID!
+  game_uid: String!
+  name: String
+  desc: String
+  rules: String
+  cover_img: String
+  banner_img: String
+  rounds: JSON
+  status: BoxCampaignsStatus
+  opening_at: DateTime!
+  start: DateTime!
+  end: DateTime!
+  highlight: String
+  spotlight_position: Int
+  game: Game!
+  boxTypes: [BoxType!]
+  whitelists: [BoxCampaignWhitelist!]
+  buyHistory: [BoxCampaignBuyHistory!]
+  created_at: DateTime!
+  updated_at: DateTime!
+  _count: BoxCampaignCount!
+}
+
+enum BoxCampaignsStatus {
+  UPCOMING
+  OPENING
+  CLOSED
+}
+
+type GChain {
+  symbol: ChainSymbol!
+  name: String
+  icon: String
+  status: Boolean
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type GCurrency {
+  uid: ID!
+  symbol: String!
+  name: String
+  icon: String
+  chain_symbol: ChainSymbol!
+  address: String!
+  owner: String
+  created_at: DateTime!
+  updated_at: DateTime!
+  chain: Chain!
+}
+
+type GGame {
+  uid: ID!
+  name: String
+  desc: String
+  desc_team: String
+  logo: String
+  website: String
+  whitepaper: String
+  pitchdeck: String
+  trailer_video: String
+  facebook: String
+  twitter: String
+  telegram: String
+  youtube: String
+  discord: String
+  boxCampaigns: [BoxCampaign!]
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type GBoxCampaign {
+  uid: ID!
+  game_uid: String!
+  name: String
+  desc: String
+  rules: String
+  cover_img: String
+  banner_img: String
+  rounds: [GBoxCampaignRound!]!
+  status: BoxCampaignsStatus
+  opening_at: DateTime!
+  start: DateTime!
+  end: DateTime!
+  highlight: String
+  spotlight_position: Int
+  created_at: DateTime!
+  updated_at: DateTime!
+  boxTypes: [GBoxType!]
+  game: GGame!
+
+  """get the chains which campaign supports"""
+  chains: [GChain!]!
+}
+
+type GBoxCampaignBase {
+  uid: ID!
+  game_uid: String!
+  name: String
+  desc: String
+  rules: String
+  cover_img: String
+  banner_img: String
+  rounds: JSON
+  status: BoxCampaignsStatus
+  opening_at: DateTime!
+  start: DateTime!
+  end: DateTime!
+  highlight: String
+  spotlight_position: Int
+  created_at: DateTime!
+  updated_at: DateTime!
+  game: GGame!
+}
+
+type GBoxContract {
+  uid: ID!
+  address: String!
+  chain_symbol: ChainSymbol!
+  currency_symbol: String
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type GBoxPrice {
+  uid: ID!
+  box_type_uid: String!
+  currency_uid: String!
+  price: Decimal
+  contract_address: String
+  created_at: DateTime!
+  updated_at: DateTime!
+  boxType: BoxType!
+  currency: GCurrency!
+  contract: GBoxContract
+}
+
+type GBoxType {
+  uid: ID!
+  box_campaign_uid: String!
+  name: String
+  desc: String
+  total_amount: Int!
+  sold_amount: Int!
+  thumb_img: String
+  series_content: String
+  limit_per_user: Int
+  created_at: DateTime!
+  updated_at: DateTime!
+  prices: [GBoxPrice!]
+}
+
+type GBoxTypeHistory {
+  uid: ID!
+  box_campaign_uid: String!
+  name: String
+  desc: String
+  total_amount: Int!
+  sold_amount: Int!
+  thumb_img: String
+  series_content: String
+  limit_per_user: Int
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type GBoxPriceHistory {
+  uid: ID!
+  box_type_uid: String!
+  currency_uid: String!
+  price: Decimal
+  contract_address: String
+  created_at: DateTime!
+  updated_at: DateTime!
+  contract: BoxContract
+  boxType: GBoxTypeHistory
+  chain_symbol: ChainSymbol
+  chain_icon: String
+  chain_name: String
+  currency_name: String
+  currency_icon: String
+  currency_symbol: String
+}
+
+type GABoxContract {
+  uid: ID!
+  address: String!
+  chain_symbol: ChainSymbol!
+  currency_symbol: String
+  admin_address: String
+  is_transfered: Boolean!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type Query {
+  """Admin"""
+  user(userId: Float!): String!
+  boxCampaign(uid: String!): GBoxCampaign!
+  game(id: Int!): Game!
+  boxContracts: [GABoxContract!]!
+}
+
+type Mutation {
+  """Admin login"""
+  login(email: String!, password: String!): AuthGraphql!
+
+  """Admin login"""
+  register(email: String!, password: String!): UserGraphql!
+  createBoxCampaign(input: GBoxCampaignCreateInput!): GBoxCampaign!
+  createBoxPrice(input: GABoxPriceCreateInput!): BoxPrice!
+  createGame(input: GameCreateInput!): Game!
+  updateGame(updateGameInput: GameUpdateInput!): Game!
+  removeGame(id: Int!): Game!
+  walletApprove(spender: String!, amount: Float!, currency_uid: String!, prvKey: String!): String!
+  createBoxContract(input: GABoxContractCreateInput!): GABoxContract!
+}
+
+input GBoxCampaignCreateInput {
+  uid: String
+  name: String
+  desc: String
+  rules: String
+  cover_img: String
+  banner_img: String
+  opening_at: DateTime
+  start: DateTime
+  end: DateTime
+  highlight: String
+  spotlight_position: Int
+  game: GameCreateNestedOneWithoutBoxCampaignsInput!
+  boxTypes: BoxTypeCreateNestedManyWithoutCampaignInput
+  created_at: DateTime
+  updated_at: DateTime
+  rounds: [GBoxCampaignRoundInput!]!
+}
+
+input GameCreateNestedOneWithoutBoxCampaignsInput {
+  create: GameCreateWithoutBoxCampaignsInput
+  connectOrCreate: GameCreateOrConnectWithoutBoxCampaignsInput
+  connect: GameWhereUniqueInput
+}
+
+input GameCreateWithoutBoxCampaignsInput {
+  uid: String
+  name: String
+  desc: String
+  desc_team: String
+  logo: String
+  website: String
+  whitepaper: String
+  pitchdeck: String
+  trailer_video: String
+  facebook: String
+  twitter: String
+  telegram: String
+  youtube: String
+  discord: String
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input GameCreateOrConnectWithoutBoxCampaignsInput {
+  where: GameWhereUniqueInput!
+  create: GameCreateWithoutBoxCampaignsInput!
+}
+
+input GameWhereUniqueInput {
+  uid: String
+}
+
+input BoxTypeCreateNestedManyWithoutCampaignInput {
+  create: [BoxTypeCreateWithoutCampaignInput!]
+  connectOrCreate: [BoxTypeCreateOrConnectWithoutCampaignInput!]
+  createMany: BoxTypeCreateManyCampaignInputEnvelope
+  connect: [BoxTypeWhereUniqueInput!]
+}
+
+input BoxTypeCreateWithoutCampaignInput {
+  uid: String
+  name: String
+  desc: String
+  total_amount: Int!
+  sold_amount: Int
+  thumb_img: String
+  series_content: String
+  limit_per_user: Int
+  prices: BoxPriceCreateNestedManyWithoutBoxTypeInput
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxPriceCreateNestedManyWithoutBoxTypeInput {
+  create: [BoxPriceCreateWithoutBoxTypeInput!]
+  connectOrCreate: [BoxPriceCreateOrConnectWithoutBoxTypeInput!]
+  createMany: BoxPriceCreateManyBoxTypeInputEnvelope
+  connect: [BoxPriceWhereUniqueInput!]
+}
+
+input BoxPriceCreateWithoutBoxTypeInput {
+  uid: String
+  price: Decimal
+  created_at: DateTime
+  updated_at: DateTime
+  contract: BoxContractCreateNestedOneWithoutBoxPricesInput
+  currency: CurrencyCreateNestedOneWithoutBoxPricesInput!
+}
+
+input BoxContractCreateNestedOneWithoutBoxPricesInput {
+  create: BoxContractCreateWithoutBoxPricesInput
+  connectOrCreate: BoxContractCreateOrConnectWithoutBoxPricesInput
+  connect: BoxContractWhereUniqueInput
+}
+
+input BoxContractCreateWithoutBoxPricesInput {
+  uid: String
+  address: String!
+  owner: String
+  currency_symbol: String
+  admin_address: String
+  admin_prv_key: String
+  is_transfered: Boolean
+  created_at: DateTime
+  updated_at: DateTime
+  chain: ChainCreateNestedOneWithoutNftBoxInput!
+}
+
+input ChainCreateNestedOneWithoutNftBoxInput {
+  create: ChainCreateWithoutNftBoxInput
+  connectOrCreate: ChainCreateOrConnectWithoutNftBoxInput
+  connect: ChainWhereUniqueInput
+}
+
+input ChainCreateWithoutNftBoxInput {
+  symbol: ChainSymbol!
+  name: String
+  icon: String
+  chain_id: Int
+  rpc_url: String
+  status: Boolean
+  created_at: DateTime
+  updated_at: DateTime
+  currencies: CurrencyCreateNestedManyWithoutChainInput
+}
+
+input CurrencyCreateNestedManyWithoutChainInput {
+  create: [CurrencyCreateWithoutChainInput!]
+  connectOrCreate: [CurrencyCreateOrConnectWithoutChainInput!]
+  createMany: CurrencyCreateManyChainInputEnvelope
+  connect: [CurrencyWhereUniqueInput!]
+}
+
+input CurrencyCreateWithoutChainInput {
+  uid: String
+  symbol: String!
+  name: String
+  icon: String
+  address: String!
+  owner: String
+  created_at: DateTime
+  updated_at: DateTime
+  boxPrices: BoxPriceCreateNestedManyWithoutCurrencyInput
+}
+
+input BoxPriceCreateNestedManyWithoutCurrencyInput {
+  create: [BoxPriceCreateWithoutCurrencyInput!]
+  connectOrCreate: [BoxPriceCreateOrConnectWithoutCurrencyInput!]
+  createMany: BoxPriceCreateManyCurrencyInputEnvelope
+  connect: [BoxPriceWhereUniqueInput!]
+}
+
+input BoxPriceCreateWithoutCurrencyInput {
+  uid: String
+  price: Decimal
+  created_at: DateTime
+  updated_at: DateTime
+  contract: BoxContractCreateNestedOneWithoutBoxPricesInput
+  boxType: BoxTypeCreateNestedOneWithoutPricesInput!
+}
+
+input BoxTypeCreateNestedOneWithoutPricesInput {
+  create: BoxTypeCreateWithoutPricesInput
+  connectOrCreate: BoxTypeCreateOrConnectWithoutPricesInput
+  connect: BoxTypeWhereUniqueInput
+}
+
+input BoxTypeCreateWithoutPricesInput {
+  uid: String
+  name: String
+  desc: String
+  total_amount: Int!
+  sold_amount: Int
+  thumb_img: String
+  series_content: String
+  limit_per_user: Int
+  campaign: BoxCampaignCreateNestedOneWithoutBoxTypesInput!
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxCampaignCreateNestedOneWithoutBoxTypesInput {
+  create: BoxCampaignCreateWithoutBoxTypesInput
+  connectOrCreate: BoxCampaignCreateOrConnectWithoutBoxTypesInput
+  connect: BoxCampaignWhereUniqueInput
+}
+
+input BoxCampaignCreateWithoutBoxTypesInput {
+  uid: String
+  name: String
+  desc: String
+  rules: String
+  cover_img: String
+  banner_img: String
+  rounds: JSON
+  status: BoxCampaignsStatus
+  opening_at: DateTime
+  start: DateTime
+  end: DateTime
+  highlight: String
+  spotlight_position: Int
+  game: GameCreateNestedOneWithoutBoxCampaignsInput!
+  whitelists: BoxCampaignWhitelistCreateNestedManyWithoutCampaignInput
+  buyHistory: BoxCampaignBuyHistoryCreateNestedManyWithoutBoxInput
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxCampaignWhitelistCreateNestedManyWithoutCampaignInput {
+  create: [BoxCampaignWhitelistCreateWithoutCampaignInput!]
+  connectOrCreate: [BoxCampaignWhitelistCreateOrConnectWithoutCampaignInput!]
+  createMany: BoxCampaignWhitelistCreateManyCampaignInputEnvelope
+  connect: [BoxCampaignWhitelistWhereUniqueInput!]
+}
+
+input BoxCampaignWhitelistCreateWithoutCampaignInput {
+  user_id: Int!
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxCampaignWhitelistCreateOrConnectWithoutCampaignInput {
+  where: BoxCampaignWhitelistWhereUniqueInput!
+  create: BoxCampaignWhitelistCreateWithoutCampaignInput!
+}
+
+input BoxCampaignWhitelistWhereUniqueInput {
+  id: Int
+  user_id_box_campaign_uid: BoxCampaignWhitelistUser_idBox_campaign_uidCompoundUniqueInput
+}
+
+input BoxCampaignWhitelistUser_idBox_campaign_uidCompoundUniqueInput {
+  user_id: Int!
+  box_campaign_uid: String!
+}
+
+input BoxCampaignWhitelistCreateManyCampaignInputEnvelope {
+  data: [BoxCampaignWhitelistCreateManyCampaignInput!]!
+  skipDuplicates: Boolean
+}
+
+input BoxCampaignWhitelistCreateManyCampaignInput {
+  id: Int
+  user_id: Int!
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxCampaignBuyHistoryCreateNestedManyWithoutBoxInput {
+  create: [BoxCampaignBuyHistoryCreateWithoutBoxInput!]
+  connectOrCreate: [BoxCampaignBuyHistoryCreateOrConnectWithoutBoxInput!]
+  createMany: BoxCampaignBuyHistoryCreateManyBoxInputEnvelope
+  connect: [BoxCampaignBuyHistoryWhereUniqueInput!]
+}
+
+input BoxCampaignBuyHistoryCreateWithoutBoxInput {
+  user_id: Int!
+  round: JSON
+  quantity: Int
+  box_price_uid: String!
+  box_type_uid: String!
+  tx_hash: String
+  status: BoxCampaignBuyHistoriesStatus
+  box_price: JSON
+  data: String
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxCampaignBuyHistoryCreateOrConnectWithoutBoxInput {
+  where: BoxCampaignBuyHistoryWhereUniqueInput!
+  create: BoxCampaignBuyHistoryCreateWithoutBoxInput!
+}
+
+input BoxCampaignBuyHistoryWhereUniqueInput {
+  id: Int
+}
+
+input BoxCampaignBuyHistoryCreateManyBoxInputEnvelope {
+  data: [BoxCampaignBuyHistoryCreateManyBoxInput!]!
+  skipDuplicates: Boolean
+}
+
+input BoxCampaignBuyHistoryCreateManyBoxInput {
+  id: Int
+  user_id: Int!
+  round: JSON
+  quantity: Int
+  box_price_uid: String!
+  box_type_uid: String!
+  tx_hash: String
+  status: BoxCampaignBuyHistoriesStatus
+  box_price: JSON
+  data: String
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxCampaignCreateOrConnectWithoutBoxTypesInput {
+  where: BoxCampaignWhereUniqueInput!
+  create: BoxCampaignCreateWithoutBoxTypesInput!
+}
+
+input BoxCampaignWhereUniqueInput {
+  uid: String
+}
+
+input BoxTypeCreateOrConnectWithoutPricesInput {
+  where: BoxTypeWhereUniqueInput!
+  create: BoxTypeCreateWithoutPricesInput!
+}
+
+input BoxTypeWhereUniqueInput {
+  uid: String
+}
+
+input BoxPriceCreateOrConnectWithoutCurrencyInput {
+  where: BoxPriceWhereUniqueInput!
+  create: BoxPriceCreateWithoutCurrencyInput!
+}
+
+input BoxPriceWhereUniqueInput {
+  uid: String
+  box_type_uid_currency_uid: BoxPriceBox_type_uidCurrency_uidCompoundUniqueInput
+}
+
+input BoxPriceBox_type_uidCurrency_uidCompoundUniqueInput {
+  box_type_uid: String!
+  currency_uid: String!
+}
+
+input BoxPriceCreateManyCurrencyInputEnvelope {
+  data: [BoxPriceCreateManyCurrencyInput!]!
+  skipDuplicates: Boolean
+}
+
+input BoxPriceCreateManyCurrencyInput {
+  uid: String
+  box_type_uid: String!
+  price: Decimal
+  contract_address: String
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input CurrencyCreateOrConnectWithoutChainInput {
+  where: CurrencyWhereUniqueInput!
+  create: CurrencyCreateWithoutChainInput!
+}
+
+input CurrencyWhereUniqueInput {
+  uid: String
+}
+
+input CurrencyCreateManyChainInputEnvelope {
+  data: [CurrencyCreateManyChainInput!]!
+  skipDuplicates: Boolean
+}
+
+input CurrencyCreateManyChainInput {
+  uid: String
+  symbol: String!
+  name: String
+  icon: String
+  address: String!
+  owner: String
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input ChainCreateOrConnectWithoutNftBoxInput {
+  where: ChainWhereUniqueInput!
+  create: ChainCreateWithoutNftBoxInput!
+}
+
+input ChainWhereUniqueInput {
+  symbol: ChainSymbol
+}
+
+input BoxContractCreateOrConnectWithoutBoxPricesInput {
+  where: BoxContractWhereUniqueInput!
+  create: BoxContractCreateWithoutBoxPricesInput!
+}
+
+input BoxContractWhereUniqueInput {
+  uid: String
+  address: String
+}
+
+input CurrencyCreateNestedOneWithoutBoxPricesInput {
+  create: CurrencyCreateWithoutBoxPricesInput
+  connectOrCreate: CurrencyCreateOrConnectWithoutBoxPricesInput
+  connect: CurrencyWhereUniqueInput
+}
+
+input CurrencyCreateWithoutBoxPricesInput {
+  uid: String
+  symbol: String!
+  name: String
+  icon: String
+  address: String!
+  owner: String
+  created_at: DateTime
+  updated_at: DateTime
+  chain: ChainCreateNestedOneWithoutCurrenciesInput!
+}
+
+input ChainCreateNestedOneWithoutCurrenciesInput {
+  create: ChainCreateWithoutCurrenciesInput
+  connectOrCreate: ChainCreateOrConnectWithoutCurrenciesInput
+  connect: ChainWhereUniqueInput
+}
+
+input ChainCreateWithoutCurrenciesInput {
+  symbol: ChainSymbol!
+  name: String
+  icon: String
+  chain_id: Int
+  rpc_url: String
+  status: Boolean
+  created_at: DateTime
+  updated_at: DateTime
+  nftBox: BoxContractCreateNestedManyWithoutChainInput
+}
+
+input BoxContractCreateNestedManyWithoutChainInput {
+  create: [BoxContractCreateWithoutChainInput!]
+  connectOrCreate: [BoxContractCreateOrConnectWithoutChainInput!]
+  createMany: BoxContractCreateManyChainInputEnvelope
+  connect: [BoxContractWhereUniqueInput!]
+}
+
+input BoxContractCreateWithoutChainInput {
+  uid: String
+  address: String!
+  owner: String
+  currency_symbol: String
+  admin_address: String
+  admin_prv_key: String
+  is_transfered: Boolean
+  created_at: DateTime
+  updated_at: DateTime
+  boxPrices: BoxPriceCreateNestedManyWithoutContractInput
+}
+
+input BoxPriceCreateNestedManyWithoutContractInput {
+  create: [BoxPriceCreateWithoutContractInput!]
+  connectOrCreate: [BoxPriceCreateOrConnectWithoutContractInput!]
+  createMany: BoxPriceCreateManyContractInputEnvelope
+  connect: [BoxPriceWhereUniqueInput!]
+}
+
+input BoxPriceCreateWithoutContractInput {
+  uid: String
+  price: Decimal
+  created_at: DateTime
+  updated_at: DateTime
+  boxType: BoxTypeCreateNestedOneWithoutPricesInput!
+  currency: CurrencyCreateNestedOneWithoutBoxPricesInput!
+}
+
+input BoxPriceCreateOrConnectWithoutContractInput {
+  where: BoxPriceWhereUniqueInput!
+  create: BoxPriceCreateWithoutContractInput!
+}
+
+input BoxPriceCreateManyContractInputEnvelope {
+  data: [BoxPriceCreateManyContractInput!]!
+  skipDuplicates: Boolean
+}
+
+input BoxPriceCreateManyContractInput {
+  uid: String
+  box_type_uid: String!
+  currency_uid: String!
+  price: Decimal
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxContractCreateOrConnectWithoutChainInput {
+  where: BoxContractWhereUniqueInput!
+  create: BoxContractCreateWithoutChainInput!
+}
+
+input BoxContractCreateManyChainInputEnvelope {
+  data: [BoxContractCreateManyChainInput!]!
+  skipDuplicates: Boolean
+}
+
+input BoxContractCreateManyChainInput {
+  uid: String
+  address: String!
+  owner: String
+  currency_symbol: String
+  admin_address: String
+  admin_prv_key: String
+  is_transfered: Boolean
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input ChainCreateOrConnectWithoutCurrenciesInput {
+  where: ChainWhereUniqueInput!
+  create: ChainCreateWithoutCurrenciesInput!
+}
+
+input CurrencyCreateOrConnectWithoutBoxPricesInput {
+  where: CurrencyWhereUniqueInput!
+  create: CurrencyCreateWithoutBoxPricesInput!
+}
+
+input BoxPriceCreateOrConnectWithoutBoxTypeInput {
+  where: BoxPriceWhereUniqueInput!
+  create: BoxPriceCreateWithoutBoxTypeInput!
+}
+
+input BoxPriceCreateManyBoxTypeInputEnvelope {
+  data: [BoxPriceCreateManyBoxTypeInput!]!
+  skipDuplicates: Boolean
+}
+
+input BoxPriceCreateManyBoxTypeInput {
+  uid: String
+  currency_uid: String!
+  price: Decimal
+  contract_address: String
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxTypeCreateOrConnectWithoutCampaignInput {
+  where: BoxTypeWhereUniqueInput!
+  create: BoxTypeCreateWithoutCampaignInput!
+}
+
+input BoxTypeCreateManyCampaignInputEnvelope {
+  data: [BoxTypeCreateManyCampaignInput!]!
+  skipDuplicates: Boolean
+}
+
+input BoxTypeCreateManyCampaignInput {
+  uid: String
+  name: String
+  desc: String
+  total_amount: Int!
+  sold_amount: Int
+  thumb_img: String
+  series_content: String
+  limit_per_user: Int
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input GBoxCampaignRoundInput {
+  id: Int!
+  name: String!
+  description: String
+  start: DateTime!
+  end: DateTime!
+  is_whitelist: Boolean
+  require_whitelist: Boolean
+
+  """whitelist limit"""
+  participant_limit: Int
+
+  """Number of box can buy per phase, currently not use"""
+  box_limit_this_phase: Int
+}
+
+input GABoxPriceCreateInput {
+  uid: String
+  created_at: DateTime
+  updated_at: DateTime
+  contract: BoxContractCreateNestedOneWithoutBoxPricesInput
+  boxType: BoxTypeCreateNestedOneWithoutPricesInput!
+  currency: CurrencyCreateNestedOneWithoutBoxPricesInput!
+  price: Float
+}
+
+input GameCreateInput {
+  uid: String
+  name: String
+  desc: String
+  desc_team: String
+  logo: String
+  website: String
+  whitepaper: String
+  pitchdeck: String
+  trailer_video: String
+  facebook: String
+  twitter: String
+  telegram: String
+  youtube: String
+  discord: String
+  boxCampaigns: BoxCampaignCreateNestedManyWithoutGameInput
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxCampaignCreateNestedManyWithoutGameInput {
+  create: [BoxCampaignCreateWithoutGameInput!]
+  connectOrCreate: [BoxCampaignCreateOrConnectWithoutGameInput!]
+  createMany: BoxCampaignCreateManyGameInputEnvelope
+  connect: [BoxCampaignWhereUniqueInput!]
+}
+
+input BoxCampaignCreateWithoutGameInput {
+  uid: String
+  name: String
+  desc: String
+  rules: String
+  cover_img: String
+  banner_img: String
+  rounds: JSON
+  status: BoxCampaignsStatus
+  opening_at: DateTime
+  start: DateTime
+  end: DateTime
+  highlight: String
+  spotlight_position: Int
+  boxTypes: BoxTypeCreateNestedManyWithoutCampaignInput
+  whitelists: BoxCampaignWhitelistCreateNestedManyWithoutCampaignInput
+  buyHistory: BoxCampaignBuyHistoryCreateNestedManyWithoutBoxInput
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input BoxCampaignCreateOrConnectWithoutGameInput {
+  where: BoxCampaignWhereUniqueInput!
+  create: BoxCampaignCreateWithoutGameInput!
+}
+
+input BoxCampaignCreateManyGameInputEnvelope {
+  data: [BoxCampaignCreateManyGameInput!]!
+  skipDuplicates: Boolean
+}
+
+input BoxCampaignCreateManyGameInput {
+  uid: String
+  name: String
+  desc: String
+  rules: String
+  cover_img: String
+  banner_img: String
+  rounds: JSON
+  status: BoxCampaignsStatus
+  opening_at: DateTime
+  start: DateTime
+  end: DateTime
+  highlight: String
+  spotlight_position: Int
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+input GameUpdateInput {
+  uid: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  desc: NullableStringFieldUpdateOperationsInput
+  desc_team: NullableStringFieldUpdateOperationsInput
+  logo: NullableStringFieldUpdateOperationsInput
+  website: NullableStringFieldUpdateOperationsInput
+  whitepaper: NullableStringFieldUpdateOperationsInput
+  pitchdeck: NullableStringFieldUpdateOperationsInput
+  trailer_video: NullableStringFieldUpdateOperationsInput
+  facebook: NullableStringFieldUpdateOperationsInput
+  twitter: NullableStringFieldUpdateOperationsInput
+  telegram: NullableStringFieldUpdateOperationsInput
+  youtube: NullableStringFieldUpdateOperationsInput
+  discord: NullableStringFieldUpdateOperationsInput
+  boxCampaigns: BoxCampaignUpdateManyWithoutGameInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input StringFieldUpdateOperationsInput {
+  set: String
+}
+
+input NullableStringFieldUpdateOperationsInput {
+  set: String
+}
+
+input BoxCampaignUpdateManyWithoutGameInput {
+  create: [BoxCampaignCreateWithoutGameInput!]
+  connectOrCreate: [BoxCampaignCreateOrConnectWithoutGameInput!]
+  upsert: [BoxCampaignUpsertWithWhereUniqueWithoutGameInput!]
+  createMany: BoxCampaignCreateManyGameInputEnvelope
+  set: [BoxCampaignWhereUniqueInput!]
+  disconnect: [BoxCampaignWhereUniqueInput!]
+  delete: [BoxCampaignWhereUniqueInput!]
+  connect: [BoxCampaignWhereUniqueInput!]
+  update: [BoxCampaignUpdateWithWhereUniqueWithoutGameInput!]
+  updateMany: [BoxCampaignUpdateManyWithWhereWithoutGameInput!]
+  deleteMany: [BoxCampaignScalarWhereInput!]
+}
+
+input BoxCampaignUpsertWithWhereUniqueWithoutGameInput {
+  where: BoxCampaignWhereUniqueInput!
+  update: BoxCampaignUpdateWithoutGameInput!
+  create: BoxCampaignCreateWithoutGameInput!
+}
+
+input BoxCampaignUpdateWithoutGameInput {
+  uid: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  desc: NullableStringFieldUpdateOperationsInput
+  rules: NullableStringFieldUpdateOperationsInput
+  cover_img: NullableStringFieldUpdateOperationsInput
+  banner_img: NullableStringFieldUpdateOperationsInput
+  rounds: JSON
+  status: NullableEnumBoxCampaignsStatusFieldUpdateOperationsInput
+  opening_at: DateTimeFieldUpdateOperationsInput
+  start: DateTimeFieldUpdateOperationsInput
+  end: DateTimeFieldUpdateOperationsInput
+  highlight: NullableStringFieldUpdateOperationsInput
+  spotlight_position: NullableIntFieldUpdateOperationsInput
+  boxTypes: BoxTypeUpdateManyWithoutCampaignInput
+  whitelists: BoxCampaignWhitelistUpdateManyWithoutCampaignInput
+  buyHistory: BoxCampaignBuyHistoryUpdateManyWithoutBoxInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input NullableEnumBoxCampaignsStatusFieldUpdateOperationsInput {
+  set: BoxCampaignsStatus
+}
+
+input DateTimeFieldUpdateOperationsInput {
+  set: DateTime
+}
+
+input NullableIntFieldUpdateOperationsInput {
+  set: Int
+  increment: Int
+  decrement: Int
+  multiply: Int
+  divide: Int
+}
+
+input BoxTypeUpdateManyWithoutCampaignInput {
+  create: [BoxTypeCreateWithoutCampaignInput!]
+  connectOrCreate: [BoxTypeCreateOrConnectWithoutCampaignInput!]
+  upsert: [BoxTypeUpsertWithWhereUniqueWithoutCampaignInput!]
+  createMany: BoxTypeCreateManyCampaignInputEnvelope
+  set: [BoxTypeWhereUniqueInput!]
+  disconnect: [BoxTypeWhereUniqueInput!]
+  delete: [BoxTypeWhereUniqueInput!]
+  connect: [BoxTypeWhereUniqueInput!]
+  update: [BoxTypeUpdateWithWhereUniqueWithoutCampaignInput!]
+  updateMany: [BoxTypeUpdateManyWithWhereWithoutCampaignInput!]
+  deleteMany: [BoxTypeScalarWhereInput!]
+}
+
+input BoxTypeUpsertWithWhereUniqueWithoutCampaignInput {
+  where: BoxTypeWhereUniqueInput!
+  update: BoxTypeUpdateWithoutCampaignInput!
+  create: BoxTypeCreateWithoutCampaignInput!
+}
+
+input BoxTypeUpdateWithoutCampaignInput {
+  uid: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  desc: NullableStringFieldUpdateOperationsInput
+  total_amount: IntFieldUpdateOperationsInput
+  sold_amount: IntFieldUpdateOperationsInput
+  thumb_img: NullableStringFieldUpdateOperationsInput
+  series_content: NullableStringFieldUpdateOperationsInput
+  limit_per_user: NullableIntFieldUpdateOperationsInput
+  prices: BoxPriceUpdateManyWithoutBoxTypeInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input IntFieldUpdateOperationsInput {
+  set: Int
+  increment: Int
+  decrement: Int
+  multiply: Int
+  divide: Int
+}
+
+input BoxPriceUpdateManyWithoutBoxTypeInput {
+  create: [BoxPriceCreateWithoutBoxTypeInput!]
+  connectOrCreate: [BoxPriceCreateOrConnectWithoutBoxTypeInput!]
+  upsert: [BoxPriceUpsertWithWhereUniqueWithoutBoxTypeInput!]
+  createMany: BoxPriceCreateManyBoxTypeInputEnvelope
+  set: [BoxPriceWhereUniqueInput!]
+  disconnect: [BoxPriceWhereUniqueInput!]
+  delete: [BoxPriceWhereUniqueInput!]
+  connect: [BoxPriceWhereUniqueInput!]
+  update: [BoxPriceUpdateWithWhereUniqueWithoutBoxTypeInput!]
+  updateMany: [BoxPriceUpdateManyWithWhereWithoutBoxTypeInput!]
+  deleteMany: [BoxPriceScalarWhereInput!]
+}
+
+input BoxPriceUpsertWithWhereUniqueWithoutBoxTypeInput {
+  where: BoxPriceWhereUniqueInput!
+  update: BoxPriceUpdateWithoutBoxTypeInput!
+  create: BoxPriceCreateWithoutBoxTypeInput!
+}
+
+input BoxPriceUpdateWithoutBoxTypeInput {
+  uid: StringFieldUpdateOperationsInput
+  price: NullableDecimalFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+  contract: BoxContractUpdateOneWithoutBoxPricesInput
+  currency: CurrencyUpdateOneRequiredWithoutBoxPricesInput
+}
+
+input NullableDecimalFieldUpdateOperationsInput {
+  set: Decimal
+  increment: Decimal
+  decrement: Decimal
+  multiply: Decimal
+  divide: Decimal
+}
+
+input BoxContractUpdateOneWithoutBoxPricesInput {
+  create: BoxContractCreateWithoutBoxPricesInput
+  connectOrCreate: BoxContractCreateOrConnectWithoutBoxPricesInput
+  upsert: BoxContractUpsertWithoutBoxPricesInput
+  disconnect: Boolean
+  delete: Boolean
+  connect: BoxContractWhereUniqueInput
+  update: BoxContractUpdateWithoutBoxPricesInput
+}
+
+input BoxContractUpsertWithoutBoxPricesInput {
+  update: BoxContractUpdateWithoutBoxPricesInput!
+  create: BoxContractCreateWithoutBoxPricesInput!
+}
+
+input BoxContractUpdateWithoutBoxPricesInput {
+  uid: StringFieldUpdateOperationsInput
+  address: StringFieldUpdateOperationsInput
+  owner: NullableStringFieldUpdateOperationsInput
+  currency_symbol: NullableStringFieldUpdateOperationsInput
+  admin_address: NullableStringFieldUpdateOperationsInput
+  admin_prv_key: NullableStringFieldUpdateOperationsInput
+  is_transfered: BoolFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+  chain: ChainUpdateOneRequiredWithoutNftBoxInput
+}
+
+input BoolFieldUpdateOperationsInput {
+  set: Boolean
+}
+
+input ChainUpdateOneRequiredWithoutNftBoxInput {
+  create: ChainCreateWithoutNftBoxInput
+  connectOrCreate: ChainCreateOrConnectWithoutNftBoxInput
+  upsert: ChainUpsertWithoutNftBoxInput
+  connect: ChainWhereUniqueInput
+  update: ChainUpdateWithoutNftBoxInput
+}
+
+input ChainUpsertWithoutNftBoxInput {
+  update: ChainUpdateWithoutNftBoxInput!
+  create: ChainCreateWithoutNftBoxInput!
+}
+
+input ChainUpdateWithoutNftBoxInput {
+  symbol: EnumChainSymbolFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  icon: NullableStringFieldUpdateOperationsInput
+  chain_id: NullableIntFieldUpdateOperationsInput
+  rpc_url: NullableStringFieldUpdateOperationsInput
+  status: NullableBoolFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+  currencies: CurrencyUpdateManyWithoutChainInput
+}
+
+input EnumChainSymbolFieldUpdateOperationsInput {
+  set: ChainSymbol
+}
+
+input NullableBoolFieldUpdateOperationsInput {
+  set: Boolean
+}
+
+input CurrencyUpdateManyWithoutChainInput {
+  create: [CurrencyCreateWithoutChainInput!]
+  connectOrCreate: [CurrencyCreateOrConnectWithoutChainInput!]
+  upsert: [CurrencyUpsertWithWhereUniqueWithoutChainInput!]
+  createMany: CurrencyCreateManyChainInputEnvelope
+  set: [CurrencyWhereUniqueInput!]
+  disconnect: [CurrencyWhereUniqueInput!]
+  delete: [CurrencyWhereUniqueInput!]
+  connect: [CurrencyWhereUniqueInput!]
+  update: [CurrencyUpdateWithWhereUniqueWithoutChainInput!]
+  updateMany: [CurrencyUpdateManyWithWhereWithoutChainInput!]
+  deleteMany: [CurrencyScalarWhereInput!]
+}
+
+input CurrencyUpsertWithWhereUniqueWithoutChainInput {
+  where: CurrencyWhereUniqueInput!
+  update: CurrencyUpdateWithoutChainInput!
+  create: CurrencyCreateWithoutChainInput!
+}
+
+input CurrencyUpdateWithoutChainInput {
+  uid: StringFieldUpdateOperationsInput
+  symbol: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  icon: NullableStringFieldUpdateOperationsInput
+  address: StringFieldUpdateOperationsInput
+  owner: NullableStringFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+  boxPrices: BoxPriceUpdateManyWithoutCurrencyInput
+}
+
+input BoxPriceUpdateManyWithoutCurrencyInput {
+  create: [BoxPriceCreateWithoutCurrencyInput!]
+  connectOrCreate: [BoxPriceCreateOrConnectWithoutCurrencyInput!]
+  upsert: [BoxPriceUpsertWithWhereUniqueWithoutCurrencyInput!]
+  createMany: BoxPriceCreateManyCurrencyInputEnvelope
+  set: [BoxPriceWhereUniqueInput!]
+  disconnect: [BoxPriceWhereUniqueInput!]
+  delete: [BoxPriceWhereUniqueInput!]
+  connect: [BoxPriceWhereUniqueInput!]
+  update: [BoxPriceUpdateWithWhereUniqueWithoutCurrencyInput!]
+  updateMany: [BoxPriceUpdateManyWithWhereWithoutCurrencyInput!]
+  deleteMany: [BoxPriceScalarWhereInput!]
+}
+
+input BoxPriceUpsertWithWhereUniqueWithoutCurrencyInput {
+  where: BoxPriceWhereUniqueInput!
+  update: BoxPriceUpdateWithoutCurrencyInput!
+  create: BoxPriceCreateWithoutCurrencyInput!
+}
+
+input BoxPriceUpdateWithoutCurrencyInput {
+  uid: StringFieldUpdateOperationsInput
+  price: NullableDecimalFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+  contract: BoxContractUpdateOneWithoutBoxPricesInput
+  boxType: BoxTypeUpdateOneRequiredWithoutPricesInput
+}
+
+input BoxTypeUpdateOneRequiredWithoutPricesInput {
+  create: BoxTypeCreateWithoutPricesInput
+  connectOrCreate: BoxTypeCreateOrConnectWithoutPricesInput
+  upsert: BoxTypeUpsertWithoutPricesInput
+  connect: BoxTypeWhereUniqueInput
+  update: BoxTypeUpdateWithoutPricesInput
+}
+
+input BoxTypeUpsertWithoutPricesInput {
+  update: BoxTypeUpdateWithoutPricesInput!
+  create: BoxTypeCreateWithoutPricesInput!
+}
+
+input BoxTypeUpdateWithoutPricesInput {
+  uid: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  desc: NullableStringFieldUpdateOperationsInput
+  total_amount: IntFieldUpdateOperationsInput
+  sold_amount: IntFieldUpdateOperationsInput
+  thumb_img: NullableStringFieldUpdateOperationsInput
+  series_content: NullableStringFieldUpdateOperationsInput
+  limit_per_user: NullableIntFieldUpdateOperationsInput
+  campaign: BoxCampaignUpdateOneRequiredWithoutBoxTypesInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input BoxCampaignUpdateOneRequiredWithoutBoxTypesInput {
+  create: BoxCampaignCreateWithoutBoxTypesInput
+  connectOrCreate: BoxCampaignCreateOrConnectWithoutBoxTypesInput
+  upsert: BoxCampaignUpsertWithoutBoxTypesInput
+  connect: BoxCampaignWhereUniqueInput
+  update: BoxCampaignUpdateWithoutBoxTypesInput
+}
+
+input BoxCampaignUpsertWithoutBoxTypesInput {
+  update: BoxCampaignUpdateWithoutBoxTypesInput!
+  create: BoxCampaignCreateWithoutBoxTypesInput!
+}
+
+input BoxCampaignUpdateWithoutBoxTypesInput {
+  uid: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  desc: NullableStringFieldUpdateOperationsInput
+  rules: NullableStringFieldUpdateOperationsInput
+  cover_img: NullableStringFieldUpdateOperationsInput
+  banner_img: NullableStringFieldUpdateOperationsInput
+  rounds: JSON
+  status: NullableEnumBoxCampaignsStatusFieldUpdateOperationsInput
+  opening_at: DateTimeFieldUpdateOperationsInput
+  start: DateTimeFieldUpdateOperationsInput
+  end: DateTimeFieldUpdateOperationsInput
+  highlight: NullableStringFieldUpdateOperationsInput
+  spotlight_position: NullableIntFieldUpdateOperationsInput
+  game: GameUpdateOneRequiredWithoutBoxCampaignsInput
+  whitelists: BoxCampaignWhitelistUpdateManyWithoutCampaignInput
+  buyHistory: BoxCampaignBuyHistoryUpdateManyWithoutBoxInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input GameUpdateOneRequiredWithoutBoxCampaignsInput {
+  create: GameCreateWithoutBoxCampaignsInput
+  connectOrCreate: GameCreateOrConnectWithoutBoxCampaignsInput
+  upsert: GameUpsertWithoutBoxCampaignsInput
+  connect: GameWhereUniqueInput
+  update: GameUpdateWithoutBoxCampaignsInput
+}
+
+input GameUpsertWithoutBoxCampaignsInput {
+  update: GameUpdateWithoutBoxCampaignsInput!
+  create: GameCreateWithoutBoxCampaignsInput!
+}
+
+input GameUpdateWithoutBoxCampaignsInput {
+  uid: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  desc: NullableStringFieldUpdateOperationsInput
+  desc_team: NullableStringFieldUpdateOperationsInput
+  logo: NullableStringFieldUpdateOperationsInput
+  website: NullableStringFieldUpdateOperationsInput
+  whitepaper: NullableStringFieldUpdateOperationsInput
+  pitchdeck: NullableStringFieldUpdateOperationsInput
+  trailer_video: NullableStringFieldUpdateOperationsInput
+  facebook: NullableStringFieldUpdateOperationsInput
+  twitter: NullableStringFieldUpdateOperationsInput
+  telegram: NullableStringFieldUpdateOperationsInput
+  youtube: NullableStringFieldUpdateOperationsInput
+  discord: NullableStringFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input BoxCampaignWhitelistUpdateManyWithoutCampaignInput {
+  create: [BoxCampaignWhitelistCreateWithoutCampaignInput!]
+  connectOrCreate: [BoxCampaignWhitelistCreateOrConnectWithoutCampaignInput!]
+  upsert: [BoxCampaignWhitelistUpsertWithWhereUniqueWithoutCampaignInput!]
+  createMany: BoxCampaignWhitelistCreateManyCampaignInputEnvelope
+  set: [BoxCampaignWhitelistWhereUniqueInput!]
+  disconnect: [BoxCampaignWhitelistWhereUniqueInput!]
+  delete: [BoxCampaignWhitelistWhereUniqueInput!]
+  connect: [BoxCampaignWhitelistWhereUniqueInput!]
+  update: [BoxCampaignWhitelistUpdateWithWhereUniqueWithoutCampaignInput!]
+  updateMany: [BoxCampaignWhitelistUpdateManyWithWhereWithoutCampaignInput!]
+  deleteMany: [BoxCampaignWhitelistScalarWhereInput!]
+}
+
+input BoxCampaignWhitelistUpsertWithWhereUniqueWithoutCampaignInput {
+  where: BoxCampaignWhitelistWhereUniqueInput!
+  update: BoxCampaignWhitelistUpdateWithoutCampaignInput!
+  create: BoxCampaignWhitelistCreateWithoutCampaignInput!
+}
+
+input BoxCampaignWhitelistUpdateWithoutCampaignInput {
+  user_id: IntFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input BoxCampaignWhitelistUpdateWithWhereUniqueWithoutCampaignInput {
+  where: BoxCampaignWhitelistWhereUniqueInput!
+  data: BoxCampaignWhitelistUpdateWithoutCampaignInput!
+}
+
+input BoxCampaignWhitelistUpdateManyWithWhereWithoutCampaignInput {
+  where: BoxCampaignWhitelistScalarWhereInput!
+  data: BoxCampaignWhitelistUpdateManyMutationInput!
+}
+
+input BoxCampaignWhitelistScalarWhereInput {
+  AND: [BoxCampaignWhitelistScalarWhereInput!]
+  OR: [BoxCampaignWhitelistScalarWhereInput!]
+  NOT: [BoxCampaignWhitelistScalarWhereInput!]
+  id: IntFilter
+  box_campaign_uid: StringFilter
+  user_id: IntFilter
+  created_at: DateTimeFilter
+  updated_at: DateTimeFilter
+}
+
+input IntFilter {
+  equals: Int
+  in: [Int!]
+  notIn: [Int!]
+  lt: Int
+  lte: Int
+  gt: Int
+  gte: Int
+  not: NestedIntFilter
+}
+
+input NestedIntFilter {
+  equals: Int
+  in: [Int!]
+  notIn: [Int!]
+  lt: Int
+  lte: Int
+  gt: Int
+  gte: Int
+  not: NestedIntFilter
+}
+
+input StringFilter {
+  equals: String
+  in: [String!]
+  notIn: [String!]
+  lt: String
+  lte: String
+  gt: String
+  gte: String
+  contains: String
+  startsWith: String
+  endsWith: String
+  not: NestedStringFilter
+}
+
+input NestedStringFilter {
+  equals: String
+  in: [String!]
+  notIn: [String!]
+  lt: String
+  lte: String
+  gt: String
+  gte: String
+  contains: String
+  startsWith: String
+  endsWith: String
+  not: NestedStringFilter
+}
+
+input DateTimeFilter {
+  equals: DateTime
+  in: [DateTime!]
+  notIn: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  gt: DateTime
+  gte: DateTime
+  not: NestedDateTimeFilter
+}
+
+input NestedDateTimeFilter {
+  equals: DateTime
+  in: [DateTime!]
+  notIn: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  gt: DateTime
+  gte: DateTime
+  not: NestedDateTimeFilter
+}
+
+input BoxCampaignWhitelistUpdateManyMutationInput {
+  user_id: IntFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input BoxCampaignBuyHistoryUpdateManyWithoutBoxInput {
+  create: [BoxCampaignBuyHistoryCreateWithoutBoxInput!]
+  connectOrCreate: [BoxCampaignBuyHistoryCreateOrConnectWithoutBoxInput!]
+  upsert: [BoxCampaignBuyHistoryUpsertWithWhereUniqueWithoutBoxInput!]
+  createMany: BoxCampaignBuyHistoryCreateManyBoxInputEnvelope
+  set: [BoxCampaignBuyHistoryWhereUniqueInput!]
+  disconnect: [BoxCampaignBuyHistoryWhereUniqueInput!]
+  delete: [BoxCampaignBuyHistoryWhereUniqueInput!]
+  connect: [BoxCampaignBuyHistoryWhereUniqueInput!]
+  update: [BoxCampaignBuyHistoryUpdateWithWhereUniqueWithoutBoxInput!]
+  updateMany: [BoxCampaignBuyHistoryUpdateManyWithWhereWithoutBoxInput!]
+  deleteMany: [BoxCampaignBuyHistoryScalarWhereInput!]
+}
+
+input BoxCampaignBuyHistoryUpsertWithWhereUniqueWithoutBoxInput {
+  where: BoxCampaignBuyHistoryWhereUniqueInput!
+  update: BoxCampaignBuyHistoryUpdateWithoutBoxInput!
+  create: BoxCampaignBuyHistoryCreateWithoutBoxInput!
+}
+
+input BoxCampaignBuyHistoryUpdateWithoutBoxInput {
+  user_id: IntFieldUpdateOperationsInput
+  round: JSON
+  quantity: NullableIntFieldUpdateOperationsInput
+  box_price_uid: StringFieldUpdateOperationsInput
+  box_type_uid: StringFieldUpdateOperationsInput
+  tx_hash: NullableStringFieldUpdateOperationsInput
+  status: EnumBoxCampaignBuyHistoriesStatusFieldUpdateOperationsInput
+  box_price: JSON
+  data: NullableStringFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input EnumBoxCampaignBuyHistoriesStatusFieldUpdateOperationsInput {
+  set: BoxCampaignBuyHistoriesStatus
+}
+
+input BoxCampaignBuyHistoryUpdateWithWhereUniqueWithoutBoxInput {
+  where: BoxCampaignBuyHistoryWhereUniqueInput!
+  data: BoxCampaignBuyHistoryUpdateWithoutBoxInput!
+}
+
+input BoxCampaignBuyHistoryUpdateManyWithWhereWithoutBoxInput {
+  where: BoxCampaignBuyHistoryScalarWhereInput!
+  data: BoxCampaignBuyHistoryUpdateManyMutationInput!
+}
+
+input BoxCampaignBuyHistoryScalarWhereInput {
+  AND: [BoxCampaignBuyHistoryScalarWhereInput!]
+  OR: [BoxCampaignBuyHistoryScalarWhereInput!]
+  NOT: [BoxCampaignBuyHistoryScalarWhereInput!]
+  id: IntFilter
+  user_id: IntFilter
+  box_campaign_uid: StringFilter
+  round: JsonNullableFilter
+  quantity: IntNullableFilter
+  box_price_uid: StringFilter
+  box_type_uid: StringFilter
+  tx_hash: StringNullableFilter
+  status: EnumBoxCampaignBuyHistoriesStatusFilter
+  box_price: JsonNullableFilter
+  data: StringNullableFilter
+  created_at: DateTimeFilter
+  updated_at: DateTimeFilter
+}
+
+input JsonNullableFilter {
+  equals: JSON
+  not: JSON
+}
+
+input IntNullableFilter {
+  equals: Int
+  in: [Int!]
+  notIn: [Int!]
+  lt: Int
+  lte: Int
+  gt: Int
+  gte: Int
+  not: NestedIntNullableFilter
+}
+
+input NestedIntNullableFilter {
+  equals: Int
+  in: [Int!]
+  notIn: [Int!]
+  lt: Int
+  lte: Int
+  gt: Int
+  gte: Int
+  not: NestedIntNullableFilter
+}
+
+input StringNullableFilter {
+  equals: String
+  in: [String!]
+  notIn: [String!]
+  lt: String
+  lte: String
+  gt: String
+  gte: String
+  contains: String
+  startsWith: String
+  endsWith: String
+  not: NestedStringNullableFilter
+}
+
+input NestedStringNullableFilter {
+  equals: String
+  in: [String!]
+  notIn: [String!]
+  lt: String
+  lte: String
+  gt: String
+  gte: String
+  contains: String
+  startsWith: String
+  endsWith: String
+  not: NestedStringNullableFilter
+}
+
+input EnumBoxCampaignBuyHistoriesStatusFilter {
+  equals: BoxCampaignBuyHistoriesStatus
+  in: [BoxCampaignBuyHistoriesStatus!]
+  notIn: [BoxCampaignBuyHistoriesStatus!]
+  not: NestedEnumBoxCampaignBuyHistoriesStatusFilter
+}
+
+input NestedEnumBoxCampaignBuyHistoriesStatusFilter {
+  equals: BoxCampaignBuyHistoriesStatus
+  in: [BoxCampaignBuyHistoriesStatus!]
+  notIn: [BoxCampaignBuyHistoriesStatus!]
+  not: NestedEnumBoxCampaignBuyHistoriesStatusFilter
+}
+
+input BoxCampaignBuyHistoryUpdateManyMutationInput {
+  user_id: IntFieldUpdateOperationsInput
+  round: JSON
+  quantity: NullableIntFieldUpdateOperationsInput
+  box_price_uid: StringFieldUpdateOperationsInput
+  box_type_uid: StringFieldUpdateOperationsInput
+  tx_hash: NullableStringFieldUpdateOperationsInput
+  status: EnumBoxCampaignBuyHistoriesStatusFieldUpdateOperationsInput
+  box_price: JSON
+  data: NullableStringFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input BoxPriceUpdateWithWhereUniqueWithoutCurrencyInput {
+  where: BoxPriceWhereUniqueInput!
+  data: BoxPriceUpdateWithoutCurrencyInput!
+}
+
+input BoxPriceUpdateManyWithWhereWithoutCurrencyInput {
+  where: BoxPriceScalarWhereInput!
+  data: BoxPriceUpdateManyMutationInput!
+}
+
+input BoxPriceScalarWhereInput {
+  AND: [BoxPriceScalarWhereInput!]
+  OR: [BoxPriceScalarWhereInput!]
+  NOT: [BoxPriceScalarWhereInput!]
+  uid: StringFilter
+  box_type_uid: StringFilter
+  currency_uid: StringFilter
+  price: DecimalNullableFilter
+  contract_address: StringNullableFilter
+  created_at: DateTimeFilter
+  updated_at: DateTimeFilter
+}
+
+input DecimalNullableFilter {
+  equals: Decimal
+  in: [Decimal!]
+  notIn: [Decimal!]
+  lt: Decimal
+  lte: Decimal
+  gt: Decimal
+  gte: Decimal
+  not: NestedDecimalNullableFilter
+}
+
+input NestedDecimalNullableFilter {
+  equals: Decimal
+  in: [Decimal!]
+  notIn: [Decimal!]
+  lt: Decimal
+  lte: Decimal
+  gt: Decimal
+  gte: Decimal
+  not: NestedDecimalNullableFilter
+}
+
+input BoxPriceUpdateManyMutationInput {
+  uid: StringFieldUpdateOperationsInput
+  price: NullableDecimalFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input CurrencyUpdateWithWhereUniqueWithoutChainInput {
+  where: CurrencyWhereUniqueInput!
+  data: CurrencyUpdateWithoutChainInput!
+}
+
+input CurrencyUpdateManyWithWhereWithoutChainInput {
+  where: CurrencyScalarWhereInput!
+  data: CurrencyUpdateManyMutationInput!
+}
+
+input CurrencyScalarWhereInput {
+  AND: [CurrencyScalarWhereInput!]
+  OR: [CurrencyScalarWhereInput!]
+  NOT: [CurrencyScalarWhereInput!]
+  uid: StringFilter
+  symbol: StringFilter
+  name: StringNullableFilter
+  icon: StringNullableFilter
+  chain_symbol: EnumChainSymbolFilter
+  address: StringFilter
+  owner: StringNullableFilter
+  created_at: DateTimeFilter
+  updated_at: DateTimeFilter
+}
+
+input EnumChainSymbolFilter {
+  equals: ChainSymbol
+  in: [ChainSymbol!]
+  notIn: [ChainSymbol!]
+  not: NestedEnumChainSymbolFilter
+}
+
+input NestedEnumChainSymbolFilter {
+  equals: ChainSymbol
+  in: [ChainSymbol!]
+  notIn: [ChainSymbol!]
+  not: NestedEnumChainSymbolFilter
+}
+
+input CurrencyUpdateManyMutationInput {
+  uid: StringFieldUpdateOperationsInput
+  symbol: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  icon: NullableStringFieldUpdateOperationsInput
+  address: StringFieldUpdateOperationsInput
+  owner: NullableStringFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input CurrencyUpdateOneRequiredWithoutBoxPricesInput {
+  create: CurrencyCreateWithoutBoxPricesInput
+  connectOrCreate: CurrencyCreateOrConnectWithoutBoxPricesInput
+  upsert: CurrencyUpsertWithoutBoxPricesInput
+  connect: CurrencyWhereUniqueInput
+  update: CurrencyUpdateWithoutBoxPricesInput
+}
+
+input CurrencyUpsertWithoutBoxPricesInput {
+  update: CurrencyUpdateWithoutBoxPricesInput!
+  create: CurrencyCreateWithoutBoxPricesInput!
+}
+
+input CurrencyUpdateWithoutBoxPricesInput {
+  uid: StringFieldUpdateOperationsInput
+  symbol: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  icon: NullableStringFieldUpdateOperationsInput
+  address: StringFieldUpdateOperationsInput
+  owner: NullableStringFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+  chain: ChainUpdateOneRequiredWithoutCurrenciesInput
+}
+
+input ChainUpdateOneRequiredWithoutCurrenciesInput {
+  create: ChainCreateWithoutCurrenciesInput
+  connectOrCreate: ChainCreateOrConnectWithoutCurrenciesInput
+  upsert: ChainUpsertWithoutCurrenciesInput
+  connect: ChainWhereUniqueInput
+  update: ChainUpdateWithoutCurrenciesInput
+}
+
+input ChainUpsertWithoutCurrenciesInput {
+  update: ChainUpdateWithoutCurrenciesInput!
+  create: ChainCreateWithoutCurrenciesInput!
+}
+
+input ChainUpdateWithoutCurrenciesInput {
+  symbol: EnumChainSymbolFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  icon: NullableStringFieldUpdateOperationsInput
+  chain_id: NullableIntFieldUpdateOperationsInput
+  rpc_url: NullableStringFieldUpdateOperationsInput
+  status: NullableBoolFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+  nftBox: BoxContractUpdateManyWithoutChainInput
+}
+
+input BoxContractUpdateManyWithoutChainInput {
+  create: [BoxContractCreateWithoutChainInput!]
+  connectOrCreate: [BoxContractCreateOrConnectWithoutChainInput!]
+  upsert: [BoxContractUpsertWithWhereUniqueWithoutChainInput!]
+  createMany: BoxContractCreateManyChainInputEnvelope
+  set: [BoxContractWhereUniqueInput!]
+  disconnect: [BoxContractWhereUniqueInput!]
+  delete: [BoxContractWhereUniqueInput!]
+  connect: [BoxContractWhereUniqueInput!]
+  update: [BoxContractUpdateWithWhereUniqueWithoutChainInput!]
+  updateMany: [BoxContractUpdateManyWithWhereWithoutChainInput!]
+  deleteMany: [BoxContractScalarWhereInput!]
+}
+
+input BoxContractUpsertWithWhereUniqueWithoutChainInput {
+  where: BoxContractWhereUniqueInput!
+  update: BoxContractUpdateWithoutChainInput!
+  create: BoxContractCreateWithoutChainInput!
+}
+
+input BoxContractUpdateWithoutChainInput {
+  uid: StringFieldUpdateOperationsInput
+  address: StringFieldUpdateOperationsInput
+  owner: NullableStringFieldUpdateOperationsInput
+  currency_symbol: NullableStringFieldUpdateOperationsInput
+  admin_address: NullableStringFieldUpdateOperationsInput
+  admin_prv_key: NullableStringFieldUpdateOperationsInput
+  is_transfered: BoolFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+  boxPrices: BoxPriceUpdateManyWithoutContractInput
+}
+
+input BoxPriceUpdateManyWithoutContractInput {
+  create: [BoxPriceCreateWithoutContractInput!]
+  connectOrCreate: [BoxPriceCreateOrConnectWithoutContractInput!]
+  upsert: [BoxPriceUpsertWithWhereUniqueWithoutContractInput!]
+  createMany: BoxPriceCreateManyContractInputEnvelope
+  set: [BoxPriceWhereUniqueInput!]
+  disconnect: [BoxPriceWhereUniqueInput!]
+  delete: [BoxPriceWhereUniqueInput!]
+  connect: [BoxPriceWhereUniqueInput!]
+  update: [BoxPriceUpdateWithWhereUniqueWithoutContractInput!]
+  updateMany: [BoxPriceUpdateManyWithWhereWithoutContractInput!]
+  deleteMany: [BoxPriceScalarWhereInput!]
+}
+
+input BoxPriceUpsertWithWhereUniqueWithoutContractInput {
+  where: BoxPriceWhereUniqueInput!
+  update: BoxPriceUpdateWithoutContractInput!
+  create: BoxPriceCreateWithoutContractInput!
+}
+
+input BoxPriceUpdateWithoutContractInput {
+  uid: StringFieldUpdateOperationsInput
+  price: NullableDecimalFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+  boxType: BoxTypeUpdateOneRequiredWithoutPricesInput
+  currency: CurrencyUpdateOneRequiredWithoutBoxPricesInput
+}
+
+input BoxPriceUpdateWithWhereUniqueWithoutContractInput {
+  where: BoxPriceWhereUniqueInput!
+  data: BoxPriceUpdateWithoutContractInput!
+}
+
+input BoxPriceUpdateManyWithWhereWithoutContractInput {
+  where: BoxPriceScalarWhereInput!
+  data: BoxPriceUpdateManyMutationInput!
+}
+
+input BoxContractUpdateWithWhereUniqueWithoutChainInput {
+  where: BoxContractWhereUniqueInput!
+  data: BoxContractUpdateWithoutChainInput!
+}
+
+input BoxContractUpdateManyWithWhereWithoutChainInput {
+  where: BoxContractScalarWhereInput!
+  data: BoxContractUpdateManyMutationInput!
+}
+
+input BoxContractScalarWhereInput {
+  AND: [BoxContractScalarWhereInput!]
+  OR: [BoxContractScalarWhereInput!]
+  NOT: [BoxContractScalarWhereInput!]
+  uid: StringFilter
+  address: StringFilter
+  owner: StringNullableFilter
+  chain_symbol: EnumChainSymbolFilter
+  currency_symbol: StringNullableFilter
+  admin_address: StringNullableFilter
+  admin_prv_key: StringNullableFilter
+  is_transfered: BoolFilter
+  created_at: DateTimeFilter
+  updated_at: DateTimeFilter
+}
+
+input BoolFilter {
+  equals: Boolean
+  not: NestedBoolFilter
+}
+
+input NestedBoolFilter {
+  equals: Boolean
+  not: NestedBoolFilter
+}
+
+input BoxContractUpdateManyMutationInput {
+  uid: StringFieldUpdateOperationsInput
+  address: StringFieldUpdateOperationsInput
+  owner: NullableStringFieldUpdateOperationsInput
+  currency_symbol: NullableStringFieldUpdateOperationsInput
+  admin_address: NullableStringFieldUpdateOperationsInput
+  admin_prv_key: NullableStringFieldUpdateOperationsInput
+  is_transfered: BoolFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input BoxPriceUpdateWithWhereUniqueWithoutBoxTypeInput {
+  where: BoxPriceWhereUniqueInput!
+  data: BoxPriceUpdateWithoutBoxTypeInput!
+}
+
+input BoxPriceUpdateManyWithWhereWithoutBoxTypeInput {
+  where: BoxPriceScalarWhereInput!
+  data: BoxPriceUpdateManyMutationInput!
+}
+
+input BoxTypeUpdateWithWhereUniqueWithoutCampaignInput {
+  where: BoxTypeWhereUniqueInput!
+  data: BoxTypeUpdateWithoutCampaignInput!
+}
+
+input BoxTypeUpdateManyWithWhereWithoutCampaignInput {
+  where: BoxTypeScalarWhereInput!
+  data: BoxTypeUpdateManyMutationInput!
+}
+
+input BoxTypeScalarWhereInput {
+  AND: [BoxTypeScalarWhereInput!]
+  OR: [BoxTypeScalarWhereInput!]
+  NOT: [BoxTypeScalarWhereInput!]
+  uid: StringFilter
+  box_campaign_uid: StringFilter
+  name: StringNullableFilter
+  desc: StringNullableFilter
+  total_amount: IntFilter
+  sold_amount: IntFilter
+  thumb_img: StringNullableFilter
+  series_content: StringNullableFilter
+  limit_per_user: IntNullableFilter
+  created_at: DateTimeFilter
+  updated_at: DateTimeFilter
+}
+
+input BoxTypeUpdateManyMutationInput {
+  uid: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  desc: NullableStringFieldUpdateOperationsInput
+  total_amount: IntFieldUpdateOperationsInput
+  sold_amount: IntFieldUpdateOperationsInput
+  thumb_img: NullableStringFieldUpdateOperationsInput
+  series_content: NullableStringFieldUpdateOperationsInput
+  limit_per_user: NullableIntFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input BoxCampaignUpdateWithWhereUniqueWithoutGameInput {
+  where: BoxCampaignWhereUniqueInput!
+  data: BoxCampaignUpdateWithoutGameInput!
+}
+
+input BoxCampaignUpdateManyWithWhereWithoutGameInput {
+  where: BoxCampaignScalarWhereInput!
+  data: BoxCampaignUpdateManyMutationInput!
+}
+
+input BoxCampaignScalarWhereInput {
+  AND: [BoxCampaignScalarWhereInput!]
+  OR: [BoxCampaignScalarWhereInput!]
+  NOT: [BoxCampaignScalarWhereInput!]
+  uid: StringFilter
+  game_uid: StringFilter
+  name: StringNullableFilter
+  desc: StringNullableFilter
+  rules: StringNullableFilter
+  cover_img: StringNullableFilter
+  banner_img: StringNullableFilter
+  rounds: JsonNullableFilter
+  status: EnumBoxCampaignsStatusNullableFilter
+  opening_at: DateTimeFilter
+  start: DateTimeFilter
+  end: DateTimeFilter
+  highlight: StringNullableFilter
+  spotlight_position: IntNullableFilter
+  created_at: DateTimeFilter
+  updated_at: DateTimeFilter
+}
+
+input EnumBoxCampaignsStatusNullableFilter {
+  equals: BoxCampaignsStatus
+  in: [BoxCampaignsStatus!]
+  notIn: [BoxCampaignsStatus!]
+  not: NestedEnumBoxCampaignsStatusNullableFilter
+}
+
+input NestedEnumBoxCampaignsStatusNullableFilter {
+  equals: BoxCampaignsStatus
+  in: [BoxCampaignsStatus!]
+  notIn: [BoxCampaignsStatus!]
+  not: NestedEnumBoxCampaignsStatusNullableFilter
+}
+
+input BoxCampaignUpdateManyMutationInput {
+  uid: StringFieldUpdateOperationsInput
+  name: NullableStringFieldUpdateOperationsInput
+  desc: NullableStringFieldUpdateOperationsInput
+  rules: NullableStringFieldUpdateOperationsInput
+  cover_img: NullableStringFieldUpdateOperationsInput
+  banner_img: NullableStringFieldUpdateOperationsInput
+  rounds: JSON
+  status: NullableEnumBoxCampaignsStatusFieldUpdateOperationsInput
+  opening_at: DateTimeFieldUpdateOperationsInput
+  start: DateTimeFieldUpdateOperationsInput
+  end: DateTimeFieldUpdateOperationsInput
+  highlight: NullableStringFieldUpdateOperationsInput
+  spotlight_position: NullableIntFieldUpdateOperationsInput
+  created_at: DateTimeFieldUpdateOperationsInput
+  updated_at: DateTimeFieldUpdateOperationsInput
+}
+
+input GABoxContractCreateInput {
+  address: String!
+  owner: String
+  currency_symbol: String
+  admin_address: String
+  admin_prv_key: String
+  chain: ChainCreateNestedOneWithoutNftBoxInput!
+}
