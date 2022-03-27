@@ -111,6 +111,7 @@ export function getUpdates(
     params: {
       offset: lastOffset + 1,
       timeout: 30,
+      // limit: 100, // Telegram set default to 100
       allowed_updates: ["message", "edited_message", "channel_post", "edited_channel_post"],
     },
     data: {},

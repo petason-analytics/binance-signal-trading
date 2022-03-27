@@ -2,7 +2,28 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type SignalGraphql {
+type BinanceOrderObject {
+  created_at: DateTime!
+  entry: String!
+  symbol: String!
+  trade_type: BinanceTradeType!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+enum BinanceTradeType {
+  BuyMarket
+  BuyLimit
+  BuyStop
+  SellMarket
+  SellLimit
+  SellStop
+}
+
+type SignalObject {
   symbol: String!
   created_at: DateTime!
   trade_type: TradeType!
@@ -15,11 +36,6 @@ type SignalGraphql {
   tp5: String
 }
 
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
-
 enum TradeType {
   Buy
   Sell
@@ -31,5 +47,31 @@ type Query {
 
 type Mutation {
   """fetch new service"""
-  extractNewTelegramSignal: [SignalGraphql!]!
+  extractNewTelegramSignal: [SignalObject!]!
+
+  """Create order on binance"""
+  createBinanceOrder(order: BinanceOrderInput!): BinanceOrderObject!
+
+  """Create order on binance"""
+  createBinanceOrderFromSignal(signal: SignalInput!): [BinanceOrderObject!]!
+}
+
+input BinanceOrderInput {
+  created_at: DateTime!
+  entry: String!
+  symbol: String!
+  trade_type: BinanceTradeType!
+}
+
+input SignalInput {
+  symbol: String!
+  created_at: DateTime!
+  trade_type: TradeType!
+  entry: String!
+  sl: String!
+  tp1: String!
+  tp2: String
+  tp3: String
+  tp4: String
+  tp5: String
 }

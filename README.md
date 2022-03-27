@@ -1,3 +1,12 @@
+# Overview
+
+=> Extractor (by Telethon): crawl new Telegram message
+=> send to rabbitmq
+=> Nestjs receive queue msg
+=> Nestjs do place order on Binance
+
+> https://bitbucket.org/bitqtradebuddy/telegram-signal-extractor-py/src/master/
+
 # Installation
 
 ## Update ENV
