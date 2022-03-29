@@ -7,7 +7,6 @@ import api from './Api'
 export const TelegramChatIds = {
   MatrixBinomoBotChannelId: '-1001398087010',
   BOGamblingAIChannelId: '@BoGamblingBot_AI',
-  CryptoSignal: '-1289166953', // group chat id
 };
 
 const devMode = process.env.NODE_ENV === 'development';
@@ -77,7 +76,7 @@ export async function sendMessageToChatId(chatId, markDownFormatedMessage) {
     return;
   }
 
-  const token = '1012674466:AAEKzxPxdwz9XQljpwT8PfFQtXZcGZDmiB0';
+  const token = process.env.TELEGRAM_BOT_TOKEN;
   return api.req({
     method: 'POST',
     url: `https://api.telegram.org/bot${token}/sendMessage`,
@@ -93,7 +92,7 @@ export async function sendMessageToChatId(chatId, markDownFormatedMessage) {
  * https://core.telegram.org/bots/api#setwebhook
  */
 export function setWebhook() {
-  // /setWebhook?url=https://2634a3ce.ngrok.io/telegramWebhook/1012674466:AAEKzxPxdwz9XQljpwT8PfFQtXZcGZDmiB0
+  // /setWebhook?url=https://2634a3ce.ngrok.io/telegramWebhook/<my_token>>
   // /getWebhookInfo
   // /deleteWebhook
   // /getUpdates?offset=1&timeout=30&allowed_updates=["message","channel_post"]
@@ -104,7 +103,7 @@ export function getUpdates(
   option: { token?: string } = {}
 ) {
   // /getUpdates?offset=11794587&timeout=30&allowed_updates=["message","channel_post"]
-  const token = option.token ? option.token : '1012674466:AAEKzxPxdwz9XQljpwT8PfFQtXZcGZDmiB0';
+  const token = option.token ? option.token : process.env.TELEGRAM_BOT_TOKEN;
   return api.req({
     method: 'GET',
     url: `https://api.telegram.org/bot${token}/getUpdates`,
