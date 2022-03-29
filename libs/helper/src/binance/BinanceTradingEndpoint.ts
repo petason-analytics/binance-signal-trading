@@ -1,4 +1,4 @@
-import Binance, { ErrorCodes, NewOrderSpot } from "binance-api-node";
+import Binance, { Account, ErrorCodes, NewOrderSpot } from "binance-api-node";
 import { EndpointError, OrderInput, OrderResponse, TradingEndpoint } from "@lib/helper/binance/TradingEndpoint";
 
 
@@ -6,6 +6,7 @@ class BinanceTradingEndpoint implements TradingEndpoint {
   private static instance: BinanceTradingEndpoint;
 
   public client;
+  public usdt_balance;
 
   /**
    * The Singleton's constructor should always be private to prevent direct
@@ -29,6 +30,10 @@ class BinanceTradingEndpoint implements TradingEndpoint {
         console.error("{BinanceTradingEndpoint} NOT Connected, Binance will not work!");
       }
     });
+
+    this.fetch_balance("USDT").then(balance => {
+      this.usdt_balance = balance;
+    });
   }
 
   /**
@@ -51,6 +56,23 @@ class BinanceTradingEndpoint implements TradingEndpoint {
     return time > 0;
   }
 
+  has_usdt_balance() {
+    return this.usdt_balance > 10; // min $10
+  }
+
+  async fetch_balance(symbol: string): Promise<number> {
+    const account: Account = await this.client.accountInfo();
+
+    for (let i = 0, c = account.balances.length; i < c; i++) {
+      const item = account.balances[i];
+      if (item.asset === symbol) {
+        return parseFloat(item.free);
+      }
+    }
+
+    return 0;
+  }
+
   /**
    * https://github.com/binance-exchange/binance-api-node#order
    *
@@ -67,6 +89,14 @@ class BinanceTradingEndpoint implements TradingEndpoint {
                 this depend on each symbol
                 Must follow the `Minimum Amount Movement` column: https://www.binance.com/en/trade-rule
      */
+
+    if (!this.has_usdt_balance()) {
+      return {
+        code: ErrorCodes.UNKNOWN,
+        message: 'Not enough USDT balance, this app require at least 10 USDT',
+        e: "App error",
+      }
+    }
 
     if (dry_run) {
       const res = await this.client.orderTest(new_order);
