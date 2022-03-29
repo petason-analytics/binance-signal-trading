@@ -21,19 +21,39 @@ export class SignalResolver {
     return result;
   }
 
+  /*
+  mutation createOrder {
+    createBinanceOrder(
+      order: {
+        trade_type: BuyMarket
+        symbol: "TRXUSDT"
+        amount: "180.2689",
+        entry: "0.0599"
+      }
+      dry_run: true
+    ) {
+      symbol
+      entry
+      trade_type
+      amount
+    }
+  }
+   */
   @Mutation(() => BinanceOrderObject, { description: "Create order on binance" })
   async createBinanceOrder(
-    @Args("order") order: BinanceOrderInput
+    @Args("order") order: BinanceOrderInput,
+    @Args("dry_run", { nullable: true }) dry_run: boolean,
   ): Promise<BinanceOrder> {
-    return this.signalService.createBinanceOrder(order)
+    return this.signalService.createBinanceOrder(order, dry_run)
   }
 
   @Mutation(() => [BinanceOrderObject], { description: "Create order on binance" })
   async createBinanceOrderFromSignal(
-    @Args("signal") signal: SignalInput
+    @Args("signal") signal: SignalInput,
+    @Args("dry_run", { nullable: true }) dry_run: boolean,
   ): Promise<[BinanceOrder]> {
     // TODO:
     const orders = this.signalService.toOrderSeries(signal)
-    return [await this.createBinanceOrder(null)];
+    return [await this.createBinanceOrder(null, dry_run)];
   }
 }

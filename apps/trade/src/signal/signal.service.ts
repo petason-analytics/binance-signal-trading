@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import BigNumber from "bignumber.js";
 import { Signal } from "./shape/Signal";
 import { AppError } from "@lib/helper/errors/base.error";
-import { BinanceOrder, BinanceTradeType } from "./shape/BinanceOrder";
+import { BinanceAmountMaxDecimal, BinanceOrder, BinanceTradeType } from "./shape/BinanceOrder";
 import BinanceTradingEndpoint from "@lib/helper/binance/BinanceTradingEndpoint";
 import { EndpointError, OrderInput } from "@lib/helper/binance/TradingEndpoint";
 
@@ -15,20 +15,40 @@ export class SignalService {
     throw new AppError("Use signal from telethon client instead", 'DEPRECATED')
   }
 
-  async createBinanceOrder(order: BinanceOrder): Promise<BinanceOrder> {
+  async createBinanceOrder(order: BinanceOrder, dry_run: boolean = false): Promise<BinanceOrder> {
+    console.log('{SignalService.createBinanceOrder} order: ', order);
+    const maxDecimal = BinanceAmountMaxDecimal[order.symbol];
     const new_order: OrderInput = {
-      symbol: "XLMETH",
-      side: "BUY", // BUY,SELL
+      symbol: order.symbol,
+      side: order.trade_type.startsWith("Sell") ? "SELL" : "BUY", // BUY,SELL
       // @ts-ignore
       type: "LIMIT", // LIMIT, MARKET, STOP, STOP_LOSS_LIMIT, STOP_LOSS_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET,
-      quantity: "100",
-      price: "0.0002",
+      quantity: new BigNumber(order.amount).decimalPlaces(maxDecimal).toString(),
+      price: order.entry.toString(),
       // newClientOrderId, // A unique id for the order. Automatically generated if not sent.
       newOrderRespType: "RESULT" // Returns more complete info of the order. ACK, RESULT, or FULL
     };
 
-    const res = await BinanceTradingEndpoint.getInstance().order(new_order, false)
+    const res = await BinanceTradingEndpoint.getInstance().order(new_order, dry_run)
     console.log('{SignalService.createBinanceOrder} res: ', res);
+    /*
+    {
+      symbol: 'TRXUSDT',
+      orderId: 1724267880,
+      orderListId: -1,
+      clientOrderId: 'YGR4OtmdqFfCZwlUzUPEzY',
+      transactTime: 1648585350864,
+      price: '0.06990000',
+      origQty: '150.30000000',
+      executedQty: '150.30000000',
+      cummulativeQuoteQty: '10.50446700',
+      status: 'FILLED',
+      timeInForce: 'GTC',
+      type: 'LIMIT',
+      side: 'BUY'
+    }
+     */
+
     if ((res as EndpointError).code && (res as EndpointError).e) {
       throw new AppError((res as EndpointError).message, "Binance_ErrorCodes_" + (res as EndpointError).code as unknown as string);
     }
@@ -41,10 +61,10 @@ export class SignalService {
     // TODO:
     return [
       {
-        created_at: new Date(),
-        entry: new BigNumber("123.4567890"),
+        trade_type: BinanceTradeType.BuyLimit,
         symbol: "BTCUSDT",
-        trade_type: BinanceTradeType.BuyLimit
+        amount: new BigNumber(20),
+        entry: new BigNumber("123.4567890"),
       }
     ]
   }

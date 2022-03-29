@@ -3,16 +3,11 @@
 # ------------------------------------------------------
 
 type BinanceOrderObject {
-  created_at: DateTime!
+  amount: String!
   entry: String!
   symbol: String!
   trade_type: BinanceTradeType!
 }
-
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
 
 enum BinanceTradeType {
   BuyMarket
@@ -36,6 +31,11 @@ type SignalObject {
   tp5: String
 }
 
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 enum TradeType {
   Buy
   Sell
@@ -50,14 +50,14 @@ type Mutation {
   extractNewTelegramSignal: [SignalObject!]!
 
   """Create order on binance"""
-  createBinanceOrder(order: BinanceOrderInput!): BinanceOrderObject!
+  createBinanceOrder(order: BinanceOrderInput!, dry_run: Boolean): BinanceOrderObject!
 
   """Create order on binance"""
-  createBinanceOrderFromSignal(signal: SignalInput!): [BinanceOrderObject!]!
+  createBinanceOrderFromSignal(signal: SignalInput!, dry_run: Boolean): [BinanceOrderObject!]!
 }
 
 input BinanceOrderInput {
-  created_at: DateTime!
+  amount: String!
   entry: String!
   symbol: String!
   trade_type: BinanceTradeType!

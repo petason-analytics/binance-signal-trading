@@ -53,19 +53,34 @@ class BinanceTradingEndpoint implements TradingEndpoint {
 
   /**
    * https://github.com/binance-exchange/binance-api-node#order
+   *
+   * BuyLimit with price more than market => filled with market price
    */
   async order(order: OrderInput, dry_run: boolean): Promise<OrderResponse | EndpointError> {
     const new_order = this.orderInput2BinanceOrder(order);
 
+    /*
+    // success if null
+    // else throw those errors:
+    - MIN_NOTIONAL: min trading vol is $10
+    - LOT_SIZE: invalid because size or decimal is redundant, eg: 150.2 TRX (~$10) is ok, but 150.2678 is invalid because to much digits
+                this depend on each symbol
+                Must follow the `Minimum Amount Movement` column: https://www.binance.com/en/trade-rule
+     */
+
     if (dry_run) {
       const res = await this.client.orderTest(new_order);
-      console.log("{BinanceTradingEndpoint.order} orderTest res: ", JSON.stringify(res));
-      return null;
+      // never to this case because it will throw error instead
+      return {
+        code: ErrorCodes.UNKNOWN,
+        message: 'success because orderTest does not return any output on success',
+        e: "Some error",
+      }
     } else {
       try {
         const res = await this.client.order(new_order);
         console.log("{BinanceTradingEndpoint.order} order res: ", res);
-        return null;
+        return res as OrderResponse;
       } catch (e) {
         console.log('{BinanceTradingEndpoint.order} e: ', e);
 
