@@ -53,7 +53,7 @@ type Mutation {
   createBinanceOrder(order: BinanceOrderInput!, dry_run: Boolean): BinanceOrderObject!
 
   """Create order on binance"""
-  createBinanceOrderFromSignal(signal: SignalInput!, dry_run: Boolean): [BinanceOrderObject!]!
+  createBinanceOrderFromSignal(signal: SignalInput!): [BinanceOrderObject!]!
 }
 
 input BinanceOrderInput {

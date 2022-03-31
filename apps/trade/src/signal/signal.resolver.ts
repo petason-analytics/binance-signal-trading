@@ -2,6 +2,7 @@ import { Args, Mutation, Query, Resolver } from "@nestjs/graphql";
 import { SignalService } from "./signal.service";
 import { Signal, SignalInput, SignalObject } from "./shape/Signal";
 import { BinanceOrder, BinanceOrderInput, BinanceOrderObject, BinanceTradeType } from "./shape/BinanceOrder";
+import { SignalTrading } from "@lib/helper/binance/SignalTrading";
 
 
 @Resolver()
@@ -50,10 +51,9 @@ export class SignalResolver {
   @Mutation(() => [BinanceOrderObject], { description: "Create order on binance" })
   async createBinanceOrderFromSignal(
     @Args("signal") signal: SignalInput,
-    @Args("dry_run", { nullable: true }) dry_run: boolean,
-  ): Promise<[BinanceOrder]> {
-    // TODO:
-    const orders = this.signalService.toOrderSeries(signal)
-    return [await this.createBinanceOrder(null, dry_run)];
+    // @Args("dry_run", { nullable: true }) dry_run: boolean,
+  ): Promise<BinanceOrder[]> {
+    const orders = await SignalTrading.getInstance().onNewSignal(signal)
+    return orders;
   }
 }

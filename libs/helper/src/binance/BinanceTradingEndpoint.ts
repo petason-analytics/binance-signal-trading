@@ -1,12 +1,14 @@
-import Binance, { Account, ErrorCodes, NewOrderSpot } from "binance-api-node";
+import Binance, { Account, ErrorCodes, NewOrderSpot, QueryOrderResult } from "binance-api-node";
 import { EndpointError, OrderInput, OrderResponse, TradingEndpoint } from "@lib/helper/binance/TradingEndpoint";
+import { AppError } from "@lib/helper/errors/base.error";
 
 
 class BinanceTradingEndpoint implements TradingEndpoint {
-  private static instance: BinanceTradingEndpoint;
-
   public client;
+  public ready = false;
   public usdt_balance;
+
+  private static instance: BinanceTradingEndpoint;
 
   /**
    * The Singleton's constructor should always be private to prevent direct
@@ -31,9 +33,9 @@ class BinanceTradingEndpoint implements TradingEndpoint {
       }
     });
 
-    this.fetch_balance("USDT").then(balance => {
-      this.usdt_balance = balance;
-    });
+    this.refresh_usdt_balance().then(() => {
+      this.ready = true;
+    })
   }
 
   /**
@@ -73,32 +75,45 @@ class BinanceTradingEndpoint implements TradingEndpoint {
     return 0;
   }
 
+  async refresh_usdt_balance(): Promise<void> {
+    return this.fetch_balance("USDT").then(balance => {
+      if (typeof balance != "number") {
+        throw new AppError("Cannot fetch current balance, please restart the app");
+      }
+      this.usdt_balance = balance;
+      console.log('{BinanceTradingEndpoint.refresh_usdt_balance} balance: ', balance);
+    });
+  }
+
   /**
    * https://github.com/binance-exchange/binance-api-node#order
    *
    * BuyLimit with price more than market => filled with market price
    */
   async order(order: OrderInput, dry_run: boolean): Promise<OrderResponse | EndpointError> {
-    const new_order = this.orderInput2BinanceOrder(order);
-
-    /*
-    // success if null
-    // else throw those errors:
-    - MIN_NOTIONAL: min trading vol is $10
-    - LOT_SIZE: invalid because size or decimal is redundant, eg: 150.2 TRX (~$10) is ok, but 150.2678 is invalid because to much digits
-                this depend on each symbol
-                Must follow the `Minimum Amount Movement` column: https://www.binance.com/en/trade-rule
-     */
+    if (!this.ready) {
+      throw new AppError("{BinanceTradingEndpoint.order} Endpoint is not ready, plz try again")
+    }
 
     if (!this.has_usdt_balance()) {
       return {
         code: ErrorCodes.UNKNOWN,
-        message: 'Not enough USDT balance, this app require at least 10 USDT',
+        message: "[APP_ERROR] Not enough USDT balance, this app require at least 10 USDT, current=$" + this.usdt_balance,
         e: "App error",
       }
     }
 
+    const new_order = this.orderInput2BinanceOrder(order);
+
     if (dry_run) {
+      /*
+       // success if null
+       // else throw those errors:
+       - MIN_NOTIONAL: min trading vol is $10
+       - LOT_SIZE: invalid because size or decimal is redundant, eg: 150.2 TRX (~$10) is ok, but 150.2678 is invalid because to much digits
+                   this depend on each symbol
+                   Must follow the `Minimum Amount Movement` column: https://www.binance.com/en/trade-rule
+      */
       const res = await this.client.orderTest(new_order);
       // never to this case because it will throw error instead
       return {
@@ -122,6 +137,13 @@ class BinanceTradingEndpoint implements TradingEndpoint {
         }
       }
     }
+  }
+
+  async fetch_all_open_orders(): Promise<QueryOrderResult> {
+    return this.client.openOrders({})
+      // .then(res => {
+      //
+      // });
   }
 
   /**

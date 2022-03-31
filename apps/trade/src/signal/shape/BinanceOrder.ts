@@ -1,6 +1,8 @@
 import BigNumber from "bignumber.js";
 import { Field, InputType, ObjectType, registerEnumType } from "@nestjs/graphql";
 import { mapObject } from "@lib/helper/object.helper";
+import { Order as BinanceOrderResponse } from "binance-api-node";
+import { AppError } from "@lib/helper/errors/base.error";
 
 type Price = BigNumber;
 
@@ -14,6 +16,30 @@ export enum BinanceTradeType {
   SellStop = "SellStop",
 }
 registerEnumType(BinanceTradeType, { name: "BinanceTradeType" });
+
+export const getBinanceTradeType = (item: BinanceOrderResponse): BinanceTradeType => {
+  if (item.side == "BUY" && item.type == "LIMIT") {
+    return BinanceTradeType.BuyLimit
+  }
+  else if (item.side == "BUY" && item.type == "MARKET") {
+    return BinanceTradeType.BuyMarket
+  }
+  else if (item.side == "BUY" && item.type == "STOP") {
+    return BinanceTradeType.BuyStop
+  }
+  if (item.side == "SELL" && item.type == "LIMIT") {
+    return BinanceTradeType.SellLimit
+  }
+  else if (item.side == "SELL" && item.type == "MARKET") {
+    return BinanceTradeType.SellMarket
+  }
+  else if (item.side == "SELL" && item.type == "STOP") {
+    return BinanceTradeType.SellStop
+  }
+  else {
+    throw new AppError(`Does not handled type: ${item.side} ${item.type}`);
+  }
+}
 
 /*
 Get this data from:
@@ -410,6 +436,7 @@ function extractBinanceTradingRule(value_col_index) {
 }
 
 export type BinanceOrder = {
+  id?: number,
   trade_type: BinanceTradeType,
   symbol: string,
   amount: Price,
