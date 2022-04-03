@@ -1,4 +1,4 @@
-import Binance, { Account, ErrorCodes, NewOrderSpot, QueryOrderResult } from "binance-api-node";
+import Binance, { Account, ErrorCodes, NewOcoOrder, NewOrderSpot, OcoOrder, QueryOrderResult } from "binance-api-node";
 import { EndpointError, OrderInput, OrderResponse, TradingEndpoint } from "@lib/helper/binance/TradingEndpoint";
 import { AppError } from "@lib/helper/errors/base.error";
 
@@ -113,6 +113,11 @@ class BinanceTradingEndpoint implements TradingEndpoint {
        - LOT_SIZE: invalid because size or decimal is redundant, eg: 150.2 TRX (~$10) is ok, but 150.2678 is invalid because to much digits
                    this depend on each symbol
                    Must follow the `Minimum Amount Movement` column: https://www.binance.com/en/trade-rule
+
+       - Filter failure: PERCENT_PRICE:
+
+       See all list of filter here:
+       https://binance-docs.github.io/apidocs/spot/en/#filters
       */
       const res = await this.client.orderTest(new_order);
       // never to this case because it will throw error instead
@@ -124,7 +129,7 @@ class BinanceTradingEndpoint implements TradingEndpoint {
     } else {
       try {
         const res = await this.client.order(new_order);
-        console.log("{BinanceTradingEndpoint.order} order res: ", res);
+        // console.log("{BinanceTradingEndpoint.order} order res: ", res);
         return res as OrderResponse;
       } catch (e) {
         console.log('{BinanceTradingEndpoint.order} e: ', e);
@@ -136,6 +141,36 @@ class BinanceTradingEndpoint implements TradingEndpoint {
           e: e,
         }
       }
+    }
+  }
+
+
+  async orderOco(order: NewOcoOrder): Promise<OcoOrder | EndpointError> {
+    if (!this.ready) {
+      throw new AppError("{BinanceTradingEndpoint.orderOco} Endpoint is not ready, plz try again");
+    }
+
+    if (!this.has_usdt_balance()) {
+      return {
+        code: ErrorCodes.UNKNOWN,
+        message: "[APP_ERROR] orderOco: Not enough USDT balance, this app require at least 10 USDT, current=$" + this.usdt_balance,
+        e: "App error"
+      };
+    }
+
+
+    try {
+      const res: OcoOrder = await this.client.orderOco(order);
+      return res;
+    } catch (e) {
+      console.log("{BinanceTradingEndpoint.orderOco} e: ", e);
+
+      const error_code = this.getErrorCode(e);
+      return {
+        code: error_code,
+        message: e.message,
+        e: e
+      };
     }
   }
 

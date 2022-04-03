@@ -18,6 +18,14 @@ export type SignalMeta = {
   source: string,
 }
 
+export enum SignalType {
+  primary = "primary",
+  tp1 = "tp1",
+  tp2 = "tp2",
+  tp3 = "tp3",
+  shouldIgnored = "shouldIgnored",
+}
+
 export type Signal = {
   symbol: string,
   created_at: Date,

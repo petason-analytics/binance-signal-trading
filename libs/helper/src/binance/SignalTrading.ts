@@ -5,9 +5,9 @@ import {
   BinanceTradeType,
   getBinanceTradeType,
 } from "../../../../apps/trade/src/signal/shape/BinanceOrder";
-import { Price, SignalInput } from "../../../../apps/trade/src/signal/shape/Signal";
+import { Price, SignalInput, SignalType } from "../../../../apps/trade/src/signal/shape/Signal";
 import BinanceTradingEndpoint from "@lib/helper/binance/BinanceTradingEndpoint";
-import { Order as BinanceOrderResponse } from "binance-api-node";
+import { NewOcoOrder as BinanceOcoOrderRequest, Order as BinanceOrderResponse } from "binance-api-node";
 import { EndpointError, OrderInput } from "@lib/helper/binance/TradingEndpoint";
 import BigNumber from "bignumber.js";
 import { AppError } from "@lib/helper/errors/base.error";
@@ -36,7 +36,7 @@ export class SignalTrading {
     return SignalTrading.instance;
   }
 
-  public async onNewSignal(signal: SignalInput): Promise<BinanceOrder[]> {
+  public async onNewSignal(signal: SignalInput, signal_type: SignalType): Promise<BinanceOrder[]> {
     let signal_orders: BinanceOrderResponse[] = await this.createSmartOrders(signal)
 
     // TP with 3 level of TP
@@ -66,45 +66,42 @@ export class SignalTrading {
   private async createSmartBuyOrder(buyOrder: BinanceOrder, tp: Price, sl: Price): Promise<BinanceOrderResponse[]> {
     /**
      * Smart flow:
-     * - order
-     * - tp
-     * - sl
-     * - tuning by trailing_sl
-     * - clean by expired_sl
+     * - new signal msg => place buy market order
+     * - After buy market order done, create a OCO order (TP & SL) with this order qtty
      */
     const primary_order: BinanceOrderResponse = await this._createBinanceOrder(buyOrder, false);
 
-    let take_profit_order: BinanceOrderResponse
-    try {
-      take_profit_order = await this._createBinanceOrder({
-        ...buyOrder,
-        trade_type: BinanceTradeType.SellLimit,
-        entry: tp,
-      }, false);
-    } catch (e) {
-      console.error('{createSmartBuyOrder} e: ', e);
-    }
+    // sleep 15s to wait for the primary order all filled
+    await new Promise(resolve => {
+      setTimeout(() => {
+        resolve(true);
+      }, 15000);
+    });
 
-    let stop_loss_order: BinanceOrderResponse;
-    try {
-      stop_loss_order = await this._createBinanceOrder({
-        ...buyOrder,
-        trade_type: BinanceTradeType.SellStop,
-        entry: sl,
-      }, false);
-    } catch (e) {
-      console.error('{createSmartBuyOrder} e: ', e);
-    }
+    // TP & SL by a OCO order
+    const tp_sl_order: BinanceOrderResponse[] = await this._createBinanceOCOOrder(buyOrder, primary_order);
 
     // TODO: tuning by trailing_sl
     // TODO: clean by expired_sl
 
     console.log('{SignalTrading.createSmartBuyOrder} primary_order: ', primary_order);
-    console.log('{SignalTrading.createSmartBuyOrder} take_profit_order: ', take_profit_order);
-    console.log('{SignalTrading.createSmartBuyOrder} stop_loss_order: ', stop_loss_order);
+    console.log('{SignalTrading.createSmartBuyOrder} tp_sl_order: ', tp_sl_order);
 
-    return [primary_order, take_profit_order, stop_loss_order]
+    return [primary_order].concat(tp_sl_order);
   }
+
+  /**
+   * createSmartOrders is too hard to code with spot order,
+   *
+   * so we change to:
+   *
+   * NEW FLOW:
+   * - new signal msg => place buy market order
+   * - After buy market order done, create a OCO order (TP & SL) with this order qtty
+   */
+  // private async createSmartOrderFlow(signal: SignalInput): Promise<BinanceOrderResponse[]> {
+  //
+  // }
 
   private async createSmartOrders(signal: SignalInput): Promise<BinanceOrderResponse[]> {
     console.log('{SignalTrading.createSmartOrders} signal: ', signal);
@@ -265,6 +262,89 @@ export class SignalTrading {
     }
 
     return res as BinanceOrderResponse
+  }
+
+  private async _createBinanceOCOOrder(order: BinanceOrder, primary_order: BinanceOrderResponse): Promise<BinanceOrderResponse[]> {
+    console.log('{SignalTrading._createBinanceOCOOrder} order: ', order);
+    const maxDecimal = BinanceAmountMaxDecimal[order.symbol];
+    const new_order: BinanceOcoOrderRequest = {
+      symbol: order.symbol,
+      side: order.trade_type.startsWith("Sell") ? "SELL" : "BUY", // BUY,SELL
+      // @ts-ignore
+      type: "LIMIT", // LIMIT, MARKET, STOP, STOP_LOSS_LIMIT, STOP_LOSS_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET,
+      quantity: new BigNumber(order.amount).decimalPlaces(maxDecimal).toString(),
+      price: order.entry.toString(),
+      // newClientOrderId, // A unique id for the order. Automatically generated if not sent.
+      newOrderRespType: "RESULT" // Returns more complete info of the order. ACK, RESULT, or FULL
+    };
+
+    const res = await BinanceTradingEndpoint.getInstance().orderOco(new_order)
+    console.log('{SignalTrading._createBinanceOCOOrder} res: ', res);
+
+    /*
+    https://binance-docs.github.io/apidocs/spot/en/#new-oco-trade
+    {
+      "orderListId": 0,
+      "contingencyType": "OCO",
+      "listStatusType": "EXEC_STARTED",
+      "listOrderStatus": "EXECUTING",
+      "listClientOrderId": "JYVpp3F0f5CAG15DhtrqLp",
+      "transactionTime": 1563417480525,
+      "symbol": "LTCBTC",
+      "orders": [
+        {
+          "symbol": "LTCBTC",
+          "orderId": 2,
+          "clientOrderId": "Kk7sqHb9J6mJWTMDVW7Vos"
+        },
+        {
+          "symbol": "LTCBTC",
+          "orderId": 3,
+          "clientOrderId": "xTXKaGYd4bluPVp78IVRvl"
+        }
+      ],
+      "orderReports": [
+        {
+          "symbol": "LTCBTC",
+          "orderId": 2,
+          "orderListId": 0,
+          "clientOrderId": "Kk7sqHb9J6mJWTMDVW7Vos",
+          "transactTime": 1563417480525,
+          "price": "0.000000",
+          "origQty": "0.624363",
+          "executedQty": "0.000000",
+          "cummulativeQuoteQty": "0.000000",
+          "status": "NEW",
+          "timeInForce": "GTC",
+          "type": "STOP_LOSS",
+          "side": "BUY",
+          "stopPrice": "0.960664"
+        },
+        {
+          "symbol": "LTCBTC",
+          "orderId": 3,
+          "orderListId": 0,
+          "clientOrderId": "xTXKaGYd4bluPVp78IVRvl",
+          "transactTime": 1563417480525,
+          "price": "0.036435",
+          "origQty": "0.624363",
+          "executedQty": "0.000000",
+          "cummulativeQuoteQty": "0.000000",
+          "status": "NEW",
+          "timeInForce": "GTC",
+          "type": "LIMIT_MAKER",
+          "side": "BUY"
+        }
+      ]
+    }
+     */
+
+    if ((res as EndpointError).code && (res as EndpointError).e) {
+      throw new AppError((res as EndpointError).message, "Binance_ErrorCodes_" + (res as EndpointError).code as unknown as string);
+    }
+
+    // TODO:
+    return []
   }
 
   public static usdt2coin(usdt_amount: number, price: number): number {
