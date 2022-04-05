@@ -13,6 +13,7 @@ export enum TradeType {
 registerEnumType(TradeType, { name: "TradeType" });
 
 export type Price = BigNumber;
+// export type Price = string;
 
 export type SignalMeta = {
   source: string,

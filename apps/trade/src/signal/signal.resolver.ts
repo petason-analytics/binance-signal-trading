@@ -1,8 +1,9 @@
 import { Args, Mutation, Query, Resolver } from "@nestjs/graphql";
 import { SignalService } from "./signal.service";
-import { Signal, SignalInput, SignalObject, SignalType } from "./shape/Signal";
+import { Price, Signal, SignalInput, SignalObject, SignalType } from "./shape/Signal";
 import { BinanceOrder, BinanceOrderInput, BinanceOrderObject, BinanceTradeType } from "./shape/BinanceOrder";
 import { SignalTrading } from "@lib/helper/binance/SignalTrading";
+import BigNumber from "bignumber.js";
 
 
 @Resolver()
@@ -50,9 +51,19 @@ export class SignalResolver {
 
   @Mutation(() => [BinanceOrderObject], { description: "Create order on binance" })
   async createBinanceOrderFromSignal(
-    @Args("signal") signal: SignalInput,
+    @Args("signal") signal_input: SignalInput,
     // @Args("dry_run", { nullable: true }) dry_run: boolean,
   ): Promise<BinanceOrder[]> {
+    const signal = {
+      ...signal_input,
+      entry: new BigNumber(signal_input.entry),
+      sl: new BigNumber(signal_input.sl),
+      tp1: new BigNumber(signal_input.tp1),
+      tp2: new BigNumber(signal_input.tp2),
+      tp3: new BigNumber(signal_input.tp3),
+      tp4: new BigNumber(signal_input.tp4),
+      tp5: new BigNumber(signal_input.tp5),
+    };
     const orders = await SignalTrading.getInstance().onNewSignal(signal, SignalType.primary)
     return orders;
   }

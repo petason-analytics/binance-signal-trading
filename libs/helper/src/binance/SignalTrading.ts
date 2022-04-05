@@ -1,11 +1,5 @@
-import {
-  BinanceAmountMaxDecimal,
-  BinanceOrder,
-  BinanceOrderObject,
-  BinanceTradeType,
-  getBinanceTradeType,
-} from "../../../../apps/trade/src/signal/shape/BinanceOrder";
-import { Price, SignalInput, SignalType } from "../../../../apps/trade/src/signal/shape/Signal";
+import { BinanceAmountMaxDecimal, BinanceOrder, BinanceTradeType, getBinanceTradeType } from "../../../../apps/trade/src/signal/shape/BinanceOrder";
+import { Price, Signal, SignalType } from "../../../../apps/trade/src/signal/shape/Signal";
 import BinanceTradingEndpoint from "@lib/helper/binance/BinanceTradingEndpoint";
 import { NewOcoOrder as BinanceOcoOrderRequest, Order as BinanceOrderResponse } from "binance-api-node";
 import { EndpointError, OrderInput } from "@lib/helper/binance/TradingEndpoint";
@@ -36,7 +30,7 @@ export class SignalTrading {
     return SignalTrading.instance;
   }
 
-  public async onNewSignal(signal: SignalInput, signal_type: SignalType): Promise<BinanceOrder[]> {
+  public async onNewSignal(signal: Signal, signal_type: SignalType): Promise<BinanceOrder[]> {
     let signal_orders: BinanceOrderResponse[] = await this.createSmartOrders(signal)
 
     // TP with 3 level of TP
@@ -79,7 +73,7 @@ export class SignalTrading {
     });
 
     // TP & SL by a OCO order
-    const tp_sl_order: BinanceOrderResponse[] = await this._createBinanceOCOOrder(buyOrder, primary_order);
+    const tp_sl_order: BinanceOrderResponse[] = await this._createBinanceOCOOrder(buyOrder, primary_order, sl, tp);
 
     // TODO: tuning by trailing_sl
     // TODO: clean by expired_sl
@@ -103,7 +97,7 @@ export class SignalTrading {
   //
   // }
 
-  private async createSmartOrders(signal: SignalInput): Promise<BinanceOrderResponse[]> {
+  private async createSmartOrders(signal: Signal): Promise<BinanceOrderResponse[]> {
     console.log('{SignalTrading.createSmartOrders} signal: ', signal);
 
     let new_orders: BinanceOrderResponse[] = [];
@@ -229,6 +223,7 @@ export class SignalTrading {
     const new_order: OrderInput = {
       symbol: order.symbol,
       side: order.trade_type.startsWith("Sell") ? "SELL" : "BUY", // BUY,SELL
+      // TODO: Change to type market
       // @ts-ignore
       type: "LIMIT", // LIMIT, MARKET, STOP, STOP_LOSS_LIMIT, STOP_LOSS_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET,
       quantity: new BigNumber(order.amount).decimalPlaces(maxDecimal).toString(),
@@ -264,17 +259,20 @@ export class SignalTrading {
     return res as BinanceOrderResponse
   }
 
-  private async _createBinanceOCOOrder(order: BinanceOrder, primary_order: BinanceOrderResponse): Promise<BinanceOrderResponse[]> {
-    console.log('{SignalTrading._createBinanceOCOOrder} order: ', order);
-    const maxDecimal = BinanceAmountMaxDecimal[order.symbol];
+  private async _createBinanceOCOOrder(order: BinanceOrder, primary_order: BinanceOrderResponse, sl: BigNumber, tp: BigNumber): Promise<BinanceOrderResponse[]> {
+    console.log('{SignalTrading._createBinanceOCOOrder} order, primary_order, sl, tp: ', order, primary_order, sl, tp);
+    const maxVolDecimal = BinanceAmountMaxDecimal[order.symbol];
+    const maxPriceDecimal = 5; // TODO: Base on: Minimum Price Movement
+
     const new_order: BinanceOcoOrderRequest = {
-      symbol: order.symbol,
-      side: order.trade_type.startsWith("Sell") ? "SELL" : "BUY", // BUY,SELL
-      // @ts-ignore
-      type: "LIMIT", // LIMIT, MARKET, STOP, STOP_LOSS_LIMIT, STOP_LOSS_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET,
-      quantity: new BigNumber(order.amount).decimalPlaces(maxDecimal).toString(),
-      price: order.entry.toString(),
-      // newClientOrderId, // A unique id for the order. Automatically generated if not sent.
+      symbol: primary_order.symbol,
+      side: primary_order.side == "SELL" ? "BUY" : "SELL", // opposite as primary order
+      // quantity: new BigNumber(primary_order.executedQty).decimalPlaces(maxVolDecimal).toString(), // TODO: Use this if buy market
+      quantity: new BigNumber(primary_order.origQty).decimalPlaces(maxVolDecimal).toString(), // Use this if buy limit
+      price: tp.decimalPlaces(maxPriceDecimal).toString(), // of the limit order
+      stopPrice: sl.plus(new BigNumber(primary_order.price).minus(sl).multipliedBy(5 / 100)).decimalPlaces(maxPriceDecimal).toString(), // stopPrice is come earlier 5%
+      stopLimitPrice: sl.decimalPlaces(maxPriceDecimal).toString(), // of the stop limit
+      stopLimitTimeInForce: 'GTC', // https://academy.binance.com/en/articles/understanding-the-different-order-types
       newOrderRespType: "RESULT" // Returns more complete info of the order. ACK, RESULT, or FULL
     };
 
