@@ -5,16 +5,20 @@ import { NewOcoOrder as BinanceOcoOrderRequest, Order as BinanceOrderResponse } 
 import { EndpointError, OrderInput } from "@lib/helper/binance/TradingEndpoint";
 import BigNumber from "bignumber.js";
 import { AppError } from "@lib/helper/errors/base.error";
+import { TelegramChat } from "../../../../apps/trade/src/signal/lib/TelegramBot";
 
 
 export class SignalTrading {
   private static instance: SignalTrading;
+  private telegram: TelegramChat;
 
   /**
    * The Singleton's constructor should always be private to prevent direct
    * construction calls with the `new` operator.
    */
-  private constructor() {}
+  private constructor() {
+    this.init();
+  }
 
   /**
    * The static method that controls the access to the singleton instance.
@@ -28,6 +32,18 @@ export class SignalTrading {
     }
 
     return SignalTrading.instance;
+  }
+
+  public init() {
+    this.telegram = new TelegramChat(
+      process.env.TELEGRAM_BOT_TOKEN,
+      process.env.TELEGRAM_CHAT_ID__BINANCE,
+      "[SignalTrading] "
+    );
+  }
+
+  public testTelegram() {
+    this.telegram.log("from binance service")
   }
 
   public async onNewSignal(signal: Signal, signal_type: SignalType): Promise<BinanceOrder[]> {
@@ -81,6 +97,10 @@ export class SignalTrading {
     console.log('{SignalTrading.createSmartBuyOrder} primary_order: ', primary_order);
     console.log('{SignalTrading.createSmartBuyOrder} tp_sl_order: ', tp_sl_order);
 
+    if (new BigNumber(primary_order.executedQty).gt(0)) {
+      this.telegram.log(`Bought ${JSON.stringify(buyOrder)} | tp: ${tp.toString()} | sl: ${sl.toString()}`);
+    }
+
     return [primary_order].concat(tp_sl_order);
   }
 
@@ -103,7 +123,7 @@ export class SignalTrading {
     let new_orders: BinanceOrderResponse[] = [];
 
     // calculate balance
-    const TP1_EQUITY_PERCENT = 20;
+    const TP1_EQUITY_PERCENT = 10;
     const TP2_EQUITY_PERCENT = 2.5;
     const TP3_EQUITY_PERCENT = 0.5;
     await BinanceTradingEndpoint.getInstance().refresh_usdt_balance();
@@ -120,8 +140,8 @@ export class SignalTrading {
      */
     const max_open_order = Math.floor(100 / (TP1_EQUITY_PERCENT + TP2_EQUITY_PERCENT + TP3_EQUITY_PERCENT));
 
-    const openOrders = await BinanceTradingEndpoint.getInstance().fetch_all_open_orders();
-    console.log('{SignalTrading.onNewSignal} openOrders: ', openOrders);
+    const openOrders = await BinanceTradingEndpoint.getInstance().fetch_symbol_open_orders(signal.symbol);
+    console.log(`{SignalTrading.onNewSignal} ${signal.symbol} openOrders: `, openOrders);
     // TODO: update all order status to db
 
     // query back from db
@@ -130,10 +150,14 @@ export class SignalTrading {
     const tp3_opening_count = 0; //"TODO";
 
 
+    if (!signal.tp1.gt(0)) {
+      console.warn("[WARN] signal.tp1 is !lt0", signal.tp1)
+      return new_orders;
+    }
     if (tp1_opening_count >= max_open_order) {
-      // TODO:
       // skip level 1
       // notice via telegram to liquid some order manually
+      this.telegram.warn(`tp1_opening_count(${tp1_opening_count}) >= max_open_order(${max_open_order})`);
       console.warn("[WARN] tp1_opening_count >= max_open_order", tp1_opening_count, max_open_order)
       return new_orders;
     }
@@ -164,10 +188,16 @@ export class SignalTrading {
     );
     new_orders = new_orders.concat(tp1_orders)
 
+
+
+    if (!signal.tp2.gt(0)) {
+      console.warn("[WARN] signal.tp2 is !lt0", signal.tp2)
+      return new_orders;
+    }
     if (tp2_opening_count >= max_open_order) {
-      // TODO:
       // skip level 2
       // notice via telegram to liquid some order manually
+      this.telegram.warn(`tp2_opening_count(${tp2_opening_count}) >= max_open_order(${max_open_order})`);
       console.warn("[WARN] tp2_opening_count >= max_open_order", tp2_opening_count, max_open_order)
 
       return new_orders;
@@ -184,10 +214,15 @@ export class SignalTrading {
     new_orders = new_orders.concat(tp2_orders)
 
 
+
+    if (!signal.tp3.gt(0)) {
+      console.warn("[WARN] signal.tp3 is !lt0", signal.tp3)
+      return new_orders;
+    }
     if (tp3_opening_count >= max_open_order) {
-      // TODO:
       // skip level 3
       // notice via telegram to liquid some order manually
+      this.telegram.warn(`tp3_opening_count(${tp3_opening_count}) >= max_open_order(${max_open_order})`);
       console.warn("[WARN] tp3_opening_count >= max_open_order", tp3_opening_count, max_open_order)
 
       return new_orders;
@@ -202,32 +237,30 @@ export class SignalTrading {
     );
     new_orders = new_orders.concat(tp3_orders)
 
+
+
     console.log('{createSmartOrders} new_orders: ', new_orders);
 
     return new_orders;
   }
 
-  private async equity_mng__sl() {
-    // TODO
-  }
-  private async tuning__trailing_sl() {
-    // TODO
-  }
-  private async cleanup__expired_sl() {
-    // TODO
-  }
-
   private async _createBinanceOrder(order: BinanceOrder, dry_run: boolean = false): Promise<BinanceOrderResponse> {
     console.log('{SignalTrading.createBinanceOrder} order: ', order);
+
+    // Skip if price has moved >= 10%
+    // if (order.entry) {
+    //   // Implement later
+    // }
+
     const maxDecimal = BinanceAmountMaxDecimal[order.symbol];
     const new_order: OrderInput = {
       symbol: order.symbol,
       side: order.trade_type.startsWith("Sell") ? "SELL" : "BUY", // BUY,SELL
       // TODO: Change to type market
       // @ts-ignore
-      type: "LIMIT", // LIMIT, MARKET, STOP, STOP_LOSS_LIMIT, STOP_LOSS_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET,
+      type: "MARKET", // LIMIT, MARKET, STOP, STOP_LOSS_LIMIT, STOP_LOSS_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET,
       quantity: new BigNumber(order.amount).decimalPlaces(maxDecimal).toString(),
-      price: order.entry.toString(),
+      // price: order.entry.toString(),
       // newClientOrderId, // A unique id for the order. Automatically generated if not sent.
       newOrderRespType: "RESULT" // Returns more complete info of the order. ACK, RESULT, or FULL
     };
@@ -253,6 +286,7 @@ export class SignalTrading {
      */
 
     if ((res as EndpointError).code && (res as EndpointError).e) {
+      await this.telegram.error(JSON.stringify(res))
       throw new AppError((res as EndpointError).message, "Binance_ErrorCodes_" + (res as EndpointError).code as unknown as string);
     }
 
@@ -260,15 +294,18 @@ export class SignalTrading {
   }
 
   private async _createBinanceOCOOrder(order: BinanceOrder, primary_order: BinanceOrderResponse, sl: BigNumber, tp: BigNumber): Promise<BinanceOrderResponse[]> {
-    console.log('{SignalTrading._createBinanceOCOOrder} order, primary_order, sl, tp: ', order, primary_order, sl, tp);
+    // console.log('{SignalTrading._createBinanceOCOOrder} order, primary_order, sl, tp: ', order, primary_order, sl, tp);
     const maxVolDecimal = BinanceAmountMaxDecimal[order.symbol];
     const maxPriceDecimal = 5; // TODO: Base on: Minimum Price Movement
 
+    const origQtty = new BigNumber(primary_order.origQty);
+    const FEE_PERCENT = 0.5;
+    const ocoQtty = origQtty.minus(origQtty.multipliedBy(FEE_PERCENT / 100)); // real owned amount = primary_order.executedQtty - transaction fee + some other fee I dont know
     const new_order: BinanceOcoOrderRequest = {
       symbol: primary_order.symbol,
       side: primary_order.side == "SELL" ? "BUY" : "SELL", // opposite as primary order
       // quantity: new BigNumber(primary_order.executedQty).decimalPlaces(maxVolDecimal).toString(), // TODO: Use this if buy market
-      quantity: new BigNumber(primary_order.origQty).decimalPlaces(maxVolDecimal).toString(), // Use this if buy limit
+      quantity: ocoQtty.decimalPlaces(maxVolDecimal).toString(), // Use this if buy limit
       price: tp.decimalPlaces(maxPriceDecimal).toString(), // of the limit order
       stopPrice: sl.plus(new BigNumber(primary_order.price).minus(sl).multipliedBy(5 / 100)).decimalPlaces(maxPriceDecimal).toString(), // stopPrice is come earlier 5%
       stopLimitPrice: sl.decimalPlaces(maxPriceDecimal).toString(), // of the stop limit
@@ -338,6 +375,7 @@ export class SignalTrading {
      */
 
     if ((res as EndpointError).code && (res as EndpointError).e) {
+      await this.telegram.error(JSON.stringify(res))
       throw new AppError((res as EndpointError).message, "Binance_ErrorCodes_" + (res as EndpointError).code as unknown as string);
     }
 

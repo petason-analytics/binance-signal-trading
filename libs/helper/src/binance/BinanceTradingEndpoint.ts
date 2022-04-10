@@ -181,6 +181,15 @@ class BinanceTradingEndpoint implements TradingEndpoint {
       // });
   }
 
+  async fetch_symbol_open_orders(symbol: string): Promise<QueryOrderResult> {
+    return this.client.openOrders({
+      symbol: symbol,
+    })
+      // .then(res => {
+      //
+      // });
+  }
+
   /**
    * Convert universal order into this endpoint Order
    */

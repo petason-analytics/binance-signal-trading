@@ -126,3 +126,46 @@ export function getUpdates(
     };
   });
 }
+
+export class TelegramChat {
+  botToken: string
+  chatId: any
+  msgPrefix: string
+
+  constructor(botToken, chatId: any, msgPrefix: string = '') {
+    this.chatId = chatId
+    this.botToken = botToken
+    this.msgPrefix = msgPrefix
+  }
+
+  async log(markDownFormattedMessage: string) {
+    return this.send(markDownFormattedMessage)
+  }
+
+  async warn(markDownFormattedMessage: string) {
+    return this.send(markDownFormattedMessage, "Warn: ");
+  }
+
+  async error(markDownFormattedMessage: string) {
+    return this.send(markDownFormattedMessage, "Error: ");
+  }
+
+  private async send(markDownFormattedMessage: string, prefix: string = '') {
+    const { chatId, botToken, msgPrefix } = this;
+
+    if (!chatId) {
+      console.log('{Telegram_sendMessage} chatId is empty');
+      return;
+    }
+
+    return api.req({
+      method: 'POST',
+      url: `https://api.telegram.org/bot${botToken}/sendMessage`,
+      data: {
+        chat_id: chatId,
+        text: msgPrefix + prefix + markDownFormattedMessage,
+        parse_mode: 'Markdown',
+      }
+    });
+  }
+}
