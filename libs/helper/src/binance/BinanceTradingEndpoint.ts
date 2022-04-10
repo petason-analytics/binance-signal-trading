@@ -1,12 +1,26 @@
-import Binance, { Account, ErrorCodes, NewOcoOrder, NewOrderSpot, OcoOrder, QueryOrderResult } from "binance-api-node";
+import Binance, {
+  Account,
+  ErrorCodes,
+  ExchangeInfo,
+  NewOcoOrder,
+  NewOrderSpot,
+  OcoOrder,
+  QueryOrderResult,
+  SymbolFilter,
+  SymbolLotSizeFilter, SymbolPriceFilter
+} from "binance-api-node";
 import { EndpointError, OrderInput, OrderResponse, TradingEndpoint } from "@lib/helper/binance/TradingEndpoint";
 import { AppError } from "@lib/helper/errors/base.error";
+import BigNumber from "bignumber.js";
 
 
 class BinanceTradingEndpoint implements TradingEndpoint {
   public client;
   public ready = false;
   public usdt_balance;
+
+  // symbol: ExchangeInfo
+  public exchange_info_cache: Record<string, ExchangeInfo> = {};
 
   private static instance: BinanceTradingEndpoint;
 
@@ -190,6 +204,26 @@ class BinanceTradingEndpoint implements TradingEndpoint {
       // });
   }
 
+  // NOTE: this result is not updated frequently
+  // So we can cache this result for 4 hours
+  private async fetch_symbol_exchange_info(symbol: string): Promise<ExchangeInfo> {
+    return this.client.exchangeInfo({
+      symbol: symbol,
+    }).then(r => {
+      // cache this
+      this.exchange_info_cache[symbol] = r
+    })
+  }
+
+  async get_symbol_exchange_info(symbol: string, cache: boolean = true): Promise<ExchangeInfo> {
+    // new fetch if force no cache or haven't cached yet
+    if (!cache || !(symbol in this.exchange_info_cache)) {
+      await this.fetch_symbol_exchange_info(symbol);
+    }
+
+    return this.exchange_info_cache[symbol];
+  }
+
   /**
    * Convert universal order into this endpoint Order
    */
@@ -208,6 +242,89 @@ class BinanceTradingEndpoint implements TradingEndpoint {
 
   getErrorCode(e: any): ErrorCodes {
     return e.code
+  }
+}
+
+export class BinanceTradingEndpointHelper {
+  static async getExchangeFilters(symbol: string) {
+    const exchangeInfo = await BinanceTradingEndpoint.getInstance().get_symbol_exchange_info(symbol);
+    const symbolInfo = exchangeInfo.symbols[0];
+    if (symbolInfo.symbol !== symbol) {
+      throw new Error("{BinanceTradingEndpointHelper.get_max_vol} FATAL ERROR: Symbol is different" + `symbol, symbolInfo.symbol: ${symbol} ${symbolInfo.symbol}`);
+    }
+
+    return symbolInfo.filters;
+
+    /*
+    [
+        {
+          "filterType": "PRICE_FILTER",
+          "minPrice": "0.00001000",
+          "maxPrice": "1000.00000000",
+          "tickSize": "0.00001000"
+        },
+        {
+          "filterType": "PERCENT_PRICE",
+          "multiplierUp": "5",
+          "multiplierDown": "0.2",
+          "avgPriceMins": 5
+        },
+        {
+          "filterType": "LOT_SIZE",
+          "minQty": "0.10000000",
+          "maxQty": "9000000.00000000",
+          "stepSize": "0.10000000"
+        },
+        {
+          "filterType": "MIN_NOTIONAL",
+          "minNotional": "10.00000000",
+          "applyToMarket": true,
+          "avgPriceMins": 5
+        },
+        {
+          "filterType": "ICEBERG_PARTS",
+          "limit": 10
+        },
+        {
+          "filterType": "MARKET_LOT_SIZE",
+          "minQty": "0.00000000",
+          "maxQty": "19685235.74384988",
+          "stepSize": "0.00000000"
+        },
+        {
+          "filterType": "MAX_NUM_ORDERS",
+          "maxNumOrders": 200
+        },
+        {
+          "filterType": "MAX_NUM_ALGO_ORDERS",
+          "maxNumAlgoOrders": 5
+        }
+      ]
+     */
+  }
+
+  private static async getExchangeFilter(symbol: string, filter_name: string): Promise<SymbolFilter> {
+    const filters = await BinanceTradingEndpointHelper.getExchangeFilters(symbol);
+    let filter: SymbolFilter = filters.find(i => i.filterType === filter_name);
+    if (!filter) {
+      return null;
+    } else {
+      return filter;
+    }
+  }
+
+  static async get_lot_size_filter(symbol: string): Promise<SymbolLotSizeFilter> {
+    const filter = await BinanceTradingEndpointHelper.getExchangeFilter(symbol, "LOT_SIZE");
+    return filter as SymbolLotSizeFilter;
+  }
+
+  static async get_price_filter(symbol: string): Promise<SymbolPriceFilter> {
+    const filter = await BinanceTradingEndpointHelper.getExchangeFilter(symbol, "PRICE_FILTER");
+    return filter as SymbolPriceFilter;
+  }
+
+  static step_size_2_max_decimal(step_size: number): number {
+    return Math.floor(Math.abs(Math.log10(step_size)));
   }
 }
 

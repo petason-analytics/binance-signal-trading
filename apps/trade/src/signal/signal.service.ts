@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 import { Signal } from "./shape/Signal";
 import { AppError } from "@lib/helper/errors/base.error";
 import { BinanceAmountMaxDecimal, BinanceOrder, BinanceTradeType } from "./shape/BinanceOrder";
-import BinanceTradingEndpoint from "@lib/helper/binance/BinanceTradingEndpoint";
+import BinanceTradingEndpoint, { BinanceTradingEndpointHelper } from "@lib/helper/binance/BinanceTradingEndpoint";
 import { EndpointError, OrderInput } from "@lib/helper/binance/TradingEndpoint";
 
 
@@ -17,7 +17,10 @@ export class SignalService {
 
   async createBinanceOrder(order: BinanceOrder, dry_run: boolean = false): Promise<BinanceOrder> {
     console.log('{SignalService.createBinanceOrder} order: ', order);
-    const maxDecimal = BinanceAmountMaxDecimal[order.symbol];
+
+    const lotSizeFilter = await BinanceTradingEndpointHelper.get_lot_size_filter(order.symbol)
+    const maxDecimal = BinanceTradingEndpointHelper.step_size_2_max_decimal(new BigNumber(lotSizeFilter.stepSize).toNumber());
+
     const new_order: OrderInput = {
       symbol: order.symbol,
       side: order.trade_type.startsWith("Sell") ? "SELL" : "BUY", // BUY,SELL

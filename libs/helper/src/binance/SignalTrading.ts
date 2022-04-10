@@ -1,6 +1,6 @@
 import { BinanceAmountMaxDecimal, BinanceOrder, BinanceTradeType, getBinanceTradeType } from "../../../../apps/trade/src/signal/shape/BinanceOrder";
 import { Price, Signal, SignalType } from "../../../../apps/trade/src/signal/shape/Signal";
-import BinanceTradingEndpoint from "@lib/helper/binance/BinanceTradingEndpoint";
+import BinanceTradingEndpoint, { BinanceTradingEndpointHelper } from "@lib/helper/binance/BinanceTradingEndpoint";
 import { NewOcoOrder as BinanceOcoOrderRequest, OcoOrder, Order as BinanceOrderResponse } from "binance-api-node";
 import { EndpointError, OrderInput } from "@lib/helper/binance/TradingEndpoint";
 import BigNumber from "bignumber.js";
@@ -58,6 +58,9 @@ export class SignalTrading {
   }
 
   public async onNewSignal(signal: Signal, signal_type: SignalType): Promise<BinanceOrder[]> {
+    // refresh symbol exchange info cache for every new signal
+    await BinanceTradingEndpoint.getInstance().get_symbol_exchange_info(signal.symbol, false);
+
     let signal_orders: BinanceOrderResponse[] = await this.createSmartOrders(signal)
 
     // TP with 3 level of TP
@@ -287,7 +290,10 @@ export class SignalTrading {
     //   // Implement later
     // }
 
-    const maxDecimal = BinanceAmountMaxDecimal[order.symbol];
+    // const maxDecimal = BinanceAmountMaxDecimal[order.symbol];
+    const lotSizeFilter = await BinanceTradingEndpointHelper.get_lot_size_filter(order.symbol)
+    const maxDecimal = BinanceTradingEndpointHelper.step_size_2_max_decimal(new BigNumber(lotSizeFilter.stepSize).toNumber());
+
     const new_order: OrderInput = {
       symbol: order.symbol,
       side: order.trade_type.startsWith("Sell") ? "SELL" : "BUY", // BUY,SELL
@@ -329,8 +335,12 @@ export class SignalTrading {
 
   private async _createBinanceOCOOrder(order: BinanceOrder, primary_order: BinanceOrderResponse, sl: BigNumber, tp: BigNumber): Promise<BinanceOrderResponse[]> {
     // console.log('{SignalTrading._createBinanceOCOOrder} order, primary_order, sl, tp: ', order, primary_order, sl, tp);
-    const maxVolDecimal = BinanceAmountMaxDecimal[order.symbol];
-    const maxPriceDecimal = 5; // TODO: Base on: Minimum Price Movement
+    // const maxVolDecimal = BinanceAmountMaxDecimal[order.symbol];
+    const lotSizeFilter = await BinanceTradingEndpointHelper.get_lot_size_filter(order.symbol)
+    const maxVolDecimal = BinanceTradingEndpointHelper.step_size_2_max_decimal(new BigNumber(lotSizeFilter.stepSize).toNumber());
+
+    const priceFilter = await BinanceTradingEndpointHelper.get_price_filter(order.symbol)
+    const maxPriceDecimal = BinanceTradingEndpointHelper.step_size_2_max_decimal(new BigNumber(priceFilter.tickSize).toNumber());
 
     const origQtty = new BigNumber(primary_order.origQty);
     const FEE_PERCENT = 0.5;
