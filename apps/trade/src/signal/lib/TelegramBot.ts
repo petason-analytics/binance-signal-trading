@@ -2,101 +2,15 @@
  * ======= Telegram Bot ======
  * How to get chat_id: https://github.com/GabrielRF/telegram-id#web-channel-id
  */
-import api from './Api'
+import api from "./Api";
 
 export const TelegramChatIds = {
   MatrixBinomoBotChannelId: '-1001398087010',
   BOGamblingAIChannelId: '@BoGamblingBot_AI',
 };
 
-const devMode = process.env.NODE_ENV === 'development';
-// console.log('{Telegram} devMode: ', devMode);
+const isDevMode = () => process.env.NODE_ENV === 'development';
 
-let TelegramEnable = !devMode;
-let chatIds = [
-  TelegramChatIds.MatrixBinomoBotChannelId,
-];
-let msgPrefix = '';
-const defaultChatId = TelegramChatIds.BOGamblingAIChannelId;
-
-
-export function setPrefix(str) {
-  msgPrefix = str;
-}
-export function setEnable(enable) {
-  TelegramEnable = enable;
-}
-export function getEnable(enable) {
-  return enable;
-}
-
-export function setChatIds(ids) {
-  if (ids.indexOf(defaultChatId) > -1) {
-    chatIds = ids;
-  } else {
-    chatIds = [...ids, defaultChatId];
-  }
-}
-
-export async function sendMessage(markDownFormatedMessage) {
-  if (!TelegramEnable) {
-    console.log('{Telegram_sendMessage} Message does not send: Telegram was not enabled');
-    return;
-  }
-
-  if (chatIds.length === 0) {
-    console.log('{Telegram_sendMessage} Message does not send: No target chatIds');
-    return;
-  }
-
-  sendMessageToAllChatIds(markDownFormatedMessage);
-}
-
-async function sendMessageToAllChatIds(markDownFormatedMessage, tmpIdx = 0) {
-  if (tmpIdx >= chatIds.length) {
-    // stop
-    return true;
-  } else {
-    // continue: send message to chatId at index
-    const chatId = chatIds[tmpIdx];
-    await sendMessageToChatId(chatId, markDownFormatedMessage);
-    // Try to send to next chatId
-    return sendMessageToAllChatIds(markDownFormatedMessage, tmpIdx + 1);
-  }
-}
-
-export async function sendMessageToChatId(chatId, markDownFormatedMessage) {
-  if (!TelegramEnable) {
-    console.log('{Telegram_sendMessage} TelegramEnable: ', TelegramEnable);
-    return;
-  }
-
-  if (!chatId) {
-    console.log('{Telegram_sendMessage} chatId is empty');
-    return;
-  }
-
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  return api.req({
-    method: 'POST',
-    url: `https://api.telegram.org/bot${token}/sendMessage`,
-    data: {
-      chat_id: chatId,
-      text: msgPrefix + markDownFormatedMessage,
-      parse_mode: 'Markdown',
-    }
-  });
-}
-
-/**
- * https://core.telegram.org/bots/api#setwebhook
- */
-export function setWebhook() {
-  // /setWebhook?url=https://2634a3ce.ngrok.io/telegramWebhook/<my_token>>
-  // /getWebhookInfo
-  // /deleteWebhook
-  // /getUpdates?offset=1&timeout=30&allowed_updates=["message","channel_post"]
-}
 
 export function getUpdates(
   lastOffset,
@@ -127,6 +41,18 @@ export function getUpdates(
   });
 }
 
+
+export enum TlMsgType {
+  'Text' = 'Text',
+  'Code' = 'Code',
+  'Bold' = 'Bold',
+}
+
+export type TelegramString = {
+  text: string,
+  type: TlMsgType,
+}
+
 export class TelegramChat {
   botToken: string
   chatId: any
@@ -139,18 +65,18 @@ export class TelegramChat {
   }
 
   async log(markDownFormattedMessage: string) {
-    return this.send(markDownFormattedMessage)
+    return this.send([{ text: markDownFormattedMessage, type: TlMsgType.Text }]);
   }
 
   async warn(markDownFormattedMessage: string) {
-    return this.send(markDownFormattedMessage, "Warn: ");
+    return this.send([{ text: markDownFormattedMessage, type: TlMsgType.Text }], "Warn: ");
   }
 
   async error(markDownFormattedMessage: string) {
-    return this.send(markDownFormattedMessage, "Error: ");
+    return this.send([{ text: markDownFormattedMessage, type: TlMsgType.Text }], "Error: ");
   }
 
-  private async send(markDownFormattedMessage: string, prefix: string = '') {
+  async send(strings: TelegramString[], prefix: string = '') {
     const { chatId, botToken, msgPrefix } = this;
 
     if (!chatId) {
@@ -159,13 +85,84 @@ export class TelegramChat {
     }
 
     return api.req({
-      method: 'POST',
+      method: "POST",
       url: `https://api.telegram.org/bot${botToken}/sendMessage`,
       data: {
         chat_id: chatId,
-        text: msgPrefix + prefix + markDownFormattedMessage,
-        parse_mode: 'Markdown',
+        text: msgPrefix + prefix + this.toMessage(strings),
+        parse_mode: "MarkdownV2"
       }
-    });
+    })
+      .then((r: any) => {
+        if (isDevMode() && r.code) {
+          console.error("TelegramError: " + JSON.stringify(r.data.data));
+        }
+
+        return r;
+      });
+  }
+
+
+  private toMessage(strings: TelegramString[]): string {
+    let markDownV2 = ''
+    for (let i = 0, c = strings.length; i < c; i++) {
+      const msg = strings[i];
+
+      switch (msg.type) {
+        case TlMsgType.Text:
+          markDownV2 += this.escape_text(msg.text)
+          break;
+        case TlMsgType.Bold:
+          markDownV2 += this.bold(msg.text)
+          break;
+        case TlMsgType.Code:
+          markDownV2 += this.code_block(msg.text)
+          break;
+        default:
+          throw new Error("Invalid string type: " + msg);
+      }
+    }
+
+    return markDownV2
+  }
+
+  /**
+   * https://core.telegram.org/bots/api#markdownv2-style
+   */
+  private escape_text(s: string): string {
+    // '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'
+    s = s
+      .replace(/_/g, '\\_')
+      .replace(/\*/g, '\\*')
+      .replace(/\[/g, '\\[')
+      .replace(/]/g, '\\]')
+      .replace(/\(/g, '\\(')
+      .replace(/\)/g, '\\)')
+      .replace(/~/g, '\\~')
+      .replace(/`/g, '\\`')
+      .replace(/>/g, '\\>')
+      .replace(/#/g, '\\#')
+      .replace(/\+/g, '\\+')
+      .replace(/-/g, '\\-')
+      .replace(/=/g, '\\=')
+      .replace(/\|/g, '\\|')
+      .replace(/\{/g, '\\{')
+      .replace(/\}/g, '\\}')
+      .replace(/\./g, '\\.')
+      .replace(/!/g, '\\!')
+    ;
+    return s
+  }
+
+  private bold(s: string): string {
+    return `**${this.escape_text(s)}**`;
+  }
+
+  public code_block(unsafeString: string): string {
+    unsafeString = unsafeString
+      .replace(/\\/g, '\\')
+      .replace(/`/g, '\`')
+    ;
+    return "\n```" + unsafeString + "```\n";
   }
 }

@@ -64,6 +64,10 @@ export class SignalResolver {
       tp4: new BigNumber(signal_input.tp4),
       tp5: new BigNumber(signal_input.tp5),
     };
+
+    // await SignalTrading.getInstance().testTelegram();
+    // return []
+
     const orders = await SignalTrading.getInstance().onNewSignal(signal, SignalType.primary)
     return orders;
   }

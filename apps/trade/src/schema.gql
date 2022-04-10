@@ -13,9 +13,13 @@ enum BinanceTradeType {
   BuyMarket
   BuyLimit
   BuyStop
+  BuyOcoStop
+  BuyOcoLimit
   SellMarket
   SellLimit
   SellStop
+  SellOcoStop
+  SellOcoLimit
 }
 
 type SignalObject {

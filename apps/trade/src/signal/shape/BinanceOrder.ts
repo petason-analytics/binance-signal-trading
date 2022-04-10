@@ -11,9 +11,13 @@ export enum BinanceTradeType {
   BuyMarket = "BuyMarket",
   BuyLimit = "BuyLimit",
   BuyStop = "BuyStop",
+  BuyOcoStop = "BuyOcoStop",
+  BuyOcoLimit = "BuyOcoLimit",
   SellMarket = "SellMarket",
   SellLimit = "SellLimit",
   SellStop = "SellStop",
+  SellOcoStop = "SellOcoStop",
+  SellOcoLimit = "SellOcoLimit",
 }
 registerEnumType(BinanceTradeType, { name: "BinanceTradeType" });
 
@@ -27,6 +31,12 @@ export const getBinanceTradeType = (item: BinanceOrderResponse): BinanceTradeTyp
   else if (item.side == "BUY" && item.type == "STOP") {
     return BinanceTradeType.BuyStop
   }
+  else if (item.side == "BUY" && item.type == "STOP_LOSS_LIMIT") {
+    return BinanceTradeType.BuyOcoStop
+  }
+  else if (item.side == "BUY" && item.type == "LIMIT_MAKER") {
+    return BinanceTradeType.BuyOcoLimit
+  }
   if (item.side == "SELL" && item.type == "LIMIT") {
     return BinanceTradeType.SellLimit
   }
@@ -35,6 +45,12 @@ export const getBinanceTradeType = (item: BinanceOrderResponse): BinanceTradeTyp
   }
   else if (item.side == "SELL" && item.type == "STOP") {
     return BinanceTradeType.SellStop
+  }
+  else if (item.side == "SELL" && item.type == "STOP_LOSS_LIMIT") {
+    return BinanceTradeType.SellOcoStop
+  }
+  else if (item.side == "SELL" && item.type == "LIMIT_MAKER") {
+    return BinanceTradeType.SellOcoLimit
   }
   else {
     throw new AppError(`Does not handled type: ${item.side} ${item.type}`);

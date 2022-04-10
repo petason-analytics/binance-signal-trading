@@ -174,14 +174,14 @@ class BinanceTradingEndpoint implements TradingEndpoint {
     }
   }
 
-  async fetch_all_open_orders(): Promise<QueryOrderResult> {
+  async fetch_all_open_orders(): Promise<QueryOrderResult[]> {
     return this.client.openOrders({})
       // .then(res => {
       //
       // });
   }
 
-  async fetch_symbol_open_orders(symbol: string): Promise<QueryOrderResult> {
+  async fetch_symbol_open_orders(symbol: string): Promise<QueryOrderResult[]> {
     return this.client.openOrders({
       symbol: symbol,
     })

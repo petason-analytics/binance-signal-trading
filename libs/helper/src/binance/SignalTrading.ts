@@ -1,11 +1,11 @@
 import { BinanceAmountMaxDecimal, BinanceOrder, BinanceTradeType, getBinanceTradeType } from "../../../../apps/trade/src/signal/shape/BinanceOrder";
 import { Price, Signal, SignalType } from "../../../../apps/trade/src/signal/shape/Signal";
 import BinanceTradingEndpoint from "@lib/helper/binance/BinanceTradingEndpoint";
-import { NewOcoOrder as BinanceOcoOrderRequest, Order as BinanceOrderResponse } from "binance-api-node";
+import { NewOcoOrder as BinanceOcoOrderRequest, OcoOrder, Order as BinanceOrderResponse } from "binance-api-node";
 import { EndpointError, OrderInput } from "@lib/helper/binance/TradingEndpoint";
 import BigNumber from "bignumber.js";
 import { AppError } from "@lib/helper/errors/base.error";
-import { TelegramChat } from "../../../../apps/trade/src/signal/lib/TelegramBot";
+import { TelegramChat, TlMsgType } from "../../../../apps/trade/src/signal/lib/TelegramBot";
 
 
 export class SignalTrading {
@@ -42,8 +42,19 @@ export class SignalTrading {
     );
   }
 
-  public testTelegram() {
-    this.telegram.log("from binance service")
+  /**
+   * Test all telegram if it;s can send special chars
+   *
+   * Eg: This msg will not be sent:
+   *  - Bought {"symbol":"TRXUSDT","trade_type":"BuyMarket","amount":"231.81761545909848","entry":"0.0599"} | tp: 0.14 | sl: 0.059
+   */
+  public async testTelegram() {
+    const msg = 'Bought ```{"symbol":"TRXUSDT","trade_type":"BuyMarket","amount":"231.75285365609346","entry":"0.0599"}```  tp: 0.14 sl: 0.059';
+    this.telegram.log(msg)
+    // console.log(await this.telegram.send([
+    //   {type: TlMsgType.Text, text: 'test JSON'},
+    //   {type: TlMsgType.Code, text: '{"symbol":"TRXUSDT","trade_type":"BuyMarket","amount":"231.75285365609346","entry":"0.0599"}'}
+    // ]))
   }
 
   public async onNewSignal(signal: Signal, signal_type: SignalType): Promise<BinanceOrder[]> {
@@ -81,6 +92,15 @@ export class SignalTrading {
      */
     const primary_order: BinanceOrderResponse = await this._createBinanceOrder(buyOrder, false);
 
+    console.log('{SignalTrading.createSmartBuyOrder} primary_order: ', primary_order);
+    if (new BigNumber(primary_order.executedQty).gt(0)) {
+      this.telegram.send([
+        { type: TlMsgType.Text, text: "Bought" },
+        { type: TlMsgType.Code, text: JSON.stringify(buyOrder) },
+        { type: TlMsgType.Text, text: `| tp: ${tp.toString()} | sl: ${sl.toString()}` }
+      ]);
+    }
+
     // sleep 15s to wait for the primary order all filled
     await new Promise(resolve => {
       setTimeout(() => {
@@ -94,11 +114,10 @@ export class SignalTrading {
     // TODO: tuning by trailing_sl
     // TODO: clean by expired_sl
 
-    console.log('{SignalTrading.createSmartBuyOrder} primary_order: ', primary_order);
-    console.log('{SignalTrading.createSmartBuyOrder} tp_sl_order: ', tp_sl_order);
 
-    if (new BigNumber(primary_order.executedQty).gt(0)) {
-      this.telegram.log(`Bought ${JSON.stringify(buyOrder)} | tp: ${tp.toString()} | sl: ${sl.toString()}`);
+    console.log("{SignalTrading.createSmartBuyOrder} tp_sl_order: ", tp_sl_order);
+    if (tp_sl_order.length > 0) {
+      this.telegram.log(`For ${primary_order.symbol}, applied tp=${tp.toString()} sl=${sl.toString()}`);
     }
 
     return [primary_order].concat(tp_sl_order);
@@ -144,12 +163,25 @@ export class SignalTrading {
     console.log(`{SignalTrading.onNewSignal} ${signal.symbol} openOrders: `, openOrders);
     // TODO: update all order status to db
 
-    // query back from db
-    const tp1_opening_count = 0; //"TODO";
-    const tp2_opening_count = 0; //"TODO";
-    const tp3_opening_count = 0; //"TODO";
+
+    const TP1_ENABLED = true;
+    const TP2_ENABLED = false;
+    const TP3_ENABLED = false;
+
+    /**
+     * Why tp1 opening count = 1/2 open orders
+     * Because we disabled tp2, tp3 so all order is tp1
+     * Each tp1 is a market order + OCO order
+     * So open_orders count will be OCO order = 2 real-life order
+     */
+    const tp1_opening_count = Math.floor(openOrders.length / 2);
+    const tp2_opening_count = 0; //"TODO"; // query back from db
+    const tp3_opening_count = 0; //"TODO"; // query back from db
 
 
+    if (!TP1_ENABLED) {
+      return new_orders;
+    }
     if (!signal.tp1.gt(0)) {
       console.warn("[WARN] signal.tp1 is !lt0", signal.tp1)
       return new_orders;
@@ -190,6 +222,9 @@ export class SignalTrading {
 
 
 
+    if (!TP2_ENABLED) {
+      return new_orders;
+    }
     if (!signal.tp2.gt(0)) {
       console.warn("[WARN] signal.tp2 is !lt0", signal.tp2)
       return new_orders;
@@ -215,6 +250,9 @@ export class SignalTrading {
 
 
 
+    if (!TP3_ENABLED) {
+      return new_orders;
+    }
     if (!signal.tp3.gt(0)) {
       console.warn("[WARN] signal.tp3 is !lt0", signal.tp3)
       return new_orders;
@@ -238,9 +276,6 @@ export class SignalTrading {
     new_orders = new_orders.concat(tp3_orders)
 
 
-
-    console.log('{createSmartOrders} new_orders: ', new_orders);
-
     return new_orders;
   }
 
@@ -256,7 +291,6 @@ export class SignalTrading {
     const new_order: OrderInput = {
       symbol: order.symbol,
       side: order.trade_type.startsWith("Sell") ? "SELL" : "BUY", // BUY,SELL
-      // TODO: Change to type market
       // @ts-ignore
       type: "MARKET", // LIMIT, MARKET, STOP, STOP_LOSS_LIMIT, STOP_LOSS_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET,
       quantity: new BigNumber(order.amount).decimalPlaces(maxDecimal).toString(),
@@ -304,7 +338,7 @@ export class SignalTrading {
     const new_order: BinanceOcoOrderRequest = {
       symbol: primary_order.symbol,
       side: primary_order.side == "SELL" ? "BUY" : "SELL", // opposite as primary order
-      // quantity: new BigNumber(primary_order.executedQty).decimalPlaces(maxVolDecimal).toString(), // TODO: Use this if buy market
+      // quantity: new BigNumber(primary_order.executedQty).decimalPlaces(maxVolDecimal).toString(),
       quantity: ocoQtty.decimalPlaces(maxVolDecimal).toString(), // Use this if buy limit
       price: tp.decimalPlaces(maxPriceDecimal).toString(), // of the limit order
       stopPrice: sl.plus(new BigNumber(primary_order.price).minus(sl).multipliedBy(5 / 100)).decimalPlaces(maxPriceDecimal).toString(), // stopPrice is come earlier 5%
@@ -379,8 +413,7 @@ export class SignalTrading {
       throw new AppError((res as EndpointError).message, "Binance_ErrorCodes_" + (res as EndpointError).code as unknown as string);
     }
 
-    // TODO:
-    return []
+    return (res as OcoOrder).orderReports
   }
 
   public static usdt2coin(usdt_amount: number, price: number): number {
