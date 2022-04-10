@@ -7,7 +7,7 @@ import Binance, {
   OcoOrder,
   QueryOrderResult,
   SymbolFilter,
-  SymbolLotSizeFilter, SymbolPriceFilter
+  SymbolLotSizeFilter, SymbolMinNotionalFilter, SymbolPriceFilter
 } from "binance-api-node";
 import { EndpointError, OrderInput, OrderResponse, TradingEndpoint } from "@lib/helper/binance/TradingEndpoint";
 import { AppError } from "@lib/helper/errors/base.error";
@@ -303,6 +303,9 @@ export class BinanceTradingEndpointHelper {
      */
   }
 
+  /**
+   * NOTE: The exchange info was cached per every new signal
+   */
   private static async getExchangeFilter(symbol: string, filter_name: string): Promise<SymbolFilter> {
     const filters = await BinanceTradingEndpointHelper.getExchangeFilters(symbol);
     let filter: SymbolFilter = filters.find(i => i.filterType === filter_name);
@@ -321,6 +324,11 @@ export class BinanceTradingEndpointHelper {
   static async get_price_filter(symbol: string): Promise<SymbolPriceFilter> {
     const filter = await BinanceTradingEndpointHelper.getExchangeFilter(symbol, "PRICE_FILTER");
     return filter as SymbolPriceFilter;
+  }
+
+  static async get_notional_filter(symbol: string): Promise<SymbolMinNotionalFilter> {
+    const filter = await BinanceTradingEndpointHelper.getExchangeFilter(symbol, "MIN_NOTIONAL");
+    return filter as SymbolMinNotionalFilter;
   }
 
   static step_size_2_max_decimal(step_size: number): number {

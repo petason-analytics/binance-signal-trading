@@ -22,6 +22,10 @@ enum BinanceTradeType {
   SellOcoLimit
 }
 
+type SignalMetaObject {
+  source: String!
+}
+
 type SignalObject {
   symbol: String!
   created_at: DateTime!
@@ -33,6 +37,7 @@ type SignalObject {
   tp3: String
   tp4: String
   tp5: String
+  meta: SignalMetaObject
 }
 
 """
@@ -78,4 +83,9 @@ input SignalInput {
   tp3: String
   tp4: String
   tp5: String
+  meta: SignalMetaInput
+}
+
+input SignalMetaInput {
+  source: String!
 }

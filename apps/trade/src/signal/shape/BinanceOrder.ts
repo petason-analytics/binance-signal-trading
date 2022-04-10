@@ -456,6 +456,7 @@ export type BinanceOrder = {
   trade_type: BinanceTradeType,
   symbol: string,
   amount: Price,
+  amount_usd?: Price,
   entry: Price,
 }
 

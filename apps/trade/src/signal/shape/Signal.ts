@@ -19,6 +19,18 @@ export type SignalMeta = {
   source: string,
 }
 
+@ObjectType()
+export class SignalMetaObject implements SignalMeta {
+  @Field(() => String)
+  source: string;
+}
+
+@InputType()
+export class SignalMetaInput implements SignalMeta {
+  @Field(() => String)
+  source: string;
+}
+
 export enum SignalType {
   primary = "primary",
   tp1 = "tp1",
@@ -64,6 +76,9 @@ export class SignalObject implements Signal {
   tp4: Price;
   @Field(() => String, { nullable: true })
   tp5: Price;
+
+  @Field(() => SignalMetaObject, { nullable: true })
+  meta: SignalMeta;
 }
 
 @InputType()
@@ -88,4 +103,7 @@ export class SignalInput implements Signal {
   tp4: Price;
   @Field(() => String, { nullable: true })
   tp5: Price;
+
+  @Field(() => SignalMetaInput, { nullable: true })
+  meta: SignalMeta;
 }

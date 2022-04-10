@@ -1,4 +1,4 @@
-import { BinanceAmountMaxDecimal, BinanceOrder, BinanceTradeType, getBinanceTradeType } from "../../../../apps/trade/src/signal/shape/BinanceOrder";
+import { BinanceOrder, BinanceTradeType, getBinanceTradeType } from "../../../../apps/trade/src/signal/shape/BinanceOrder";
 import { Price, Signal, SignalType } from "../../../../apps/trade/src/signal/shape/Signal";
 import BinanceTradingEndpoint, { BinanceTradingEndpointHelper } from "@lib/helper/binance/BinanceTradingEndpoint";
 import { NewOcoOrder as BinanceOcoOrderRequest, OcoOrder, Order as BinanceOrderResponse } from "binance-api-node";
@@ -61,14 +61,25 @@ export class SignalTrading {
     // refresh symbol exchange info cache for every new signal
     await BinanceTradingEndpoint.getInstance().get_symbol_exchange_info(signal.symbol, false);
 
-    let signal_orders: BinanceOrderResponse[] = await this.createSmartOrders(signal)
+    let signal_orders: BinanceOrderResponse[] = [];
+    try {
+      signal_orders = await this.createSmartOrders(signal)
+      console.log('{SignalTrading.onNewSignal} signal_orders: ', signal_orders);
+    } catch (e) {
+      this.telegram.send([
+        { type: TlMsgType.Text, text: "createSmartOrders: " },
+        { type: TlMsgType.Text, text: "signal: " },
+        { type: TlMsgType.Code, text: JSON.stringify(signal) },
+        { type: TlMsgType.Text, text: "e: " },
+        { type: TlMsgType.Code, text: JSON.stringify(e) }
+      ], "onNewSignal: ERROR: ");
+    }
 
     // TP with 3 level of TP
     // SL: 50%
     // Trailing SL
     // SL if order is opened over 2 weeks
 
-    console.log('{SignalTrading.onNewSignal} signal_orders: ', signal_orders);
 
     const new_orders_obj: BinanceOrder[] = [];
 
@@ -145,14 +156,18 @@ export class SignalTrading {
     let new_orders: BinanceOrderResponse[] = [];
 
     // calculate balance
-    const TP1_EQUITY_PERCENT = 10;
+    const TP1_EQUITY_PERCENT = 5;
     const TP2_EQUITY_PERCENT = 2.5;
     const TP3_EQUITY_PERCENT = 0.5;
     await BinanceTradingEndpoint.getInstance().refresh_usdt_balance();
+    const notionalFilter = await BinanceTradingEndpointHelper.get_notional_filter(signal.symbol)
+    // @ts-ignore
+    const minTradingVol = new BigNumber(notionalFilter.minNotional).toNumber(); // {filterType: 'MIN_NOTIONAL',minNotional: '10.00000000',applyToMarket: true,avgPriceMins: 5}
+
     const usdt_balance = BinanceTradingEndpoint.getInstance().usdt_balance;
-    const tp1_trade_vol_usdt = usdt_balance * TP1_EQUITY_PERCENT / 100;
-    const tp2_trade_vol_usdt = usdt_balance * TP2_EQUITY_PERCENT/ 100;
-    const tp3_trade_vol_usdt = usdt_balance * TP3_EQUITY_PERCENT / 100;
+    const tp1_trade_vol_usdt = Math.max(minTradingVol, usdt_balance * TP1_EQUITY_PERCENT / 100);
+    const tp2_trade_vol_usdt = Math.max(minTradingVol, usdt_balance * TP2_EQUITY_PERCENT/ 100);
+    const tp3_trade_vol_usdt = Math.max(minTradingVol, usdt_balance * TP3_EQUITY_PERCENT / 100);
 
     // trade 8% each signal (assume that 12 order opening at the same time)
     /*
@@ -212,10 +227,12 @@ export class SignalTrading {
     //   amount: new BigNumber(SignalTrading.usdt2coin(tp1_trade_vol_usdt, current_price)),
     // }, false);
     // new_orders.push(tp1_order)
+    const amount_coin = SignalTrading.usdt2coin(tp1_trade_vol_usdt, current_price)
     const tp1_orders: BinanceOrderResponse[] = await this.createSmartBuyOrder(
       {
         ...spot_order,
-        amount: new BigNumber(SignalTrading.usdt2coin(tp1_trade_vol_usdt, current_price))
+        amount: new BigNumber(amount_coin),
+        amount_usd: new BigNumber(tp1_trade_vol_usdt),
       },
       signal.tp1,
       // signal.entry.div(2) // sl at 50%
