@@ -53,3 +53,11 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+
+## Binance useful docs
+- Classical trade UI: https://www.binance.com/en/trade/DOGE_USDT
+- Spot wallet: https://www.binance.com/en/my/wallet/account/main
+- https://www.binance.com/en/trade-rule
+- API docs: https://binance-docs.github.io/apidocs/spot/en/#check-server-time
+- API error refs: https://binance-docs.github.io/apidocs/spot/en/#11xx-2xxx-request-issues
+

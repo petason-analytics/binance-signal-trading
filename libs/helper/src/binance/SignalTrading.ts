@@ -204,6 +204,18 @@ export class SignalTrading {
       console.warn("[WARN] signal.tp1 is !lt0", signal.tp1)
       return new_orders;
     }
+    if (tp1_trade_vol_usdt >= usdt_balance) {
+      console.warn("[WARN] not enough usdt to order: ", signal);
+      this.telegram.send([
+        { type: TlMsgType.Text, text: "Not enough money for tp1" },
+        { type: TlMsgType.Code, text: JSON.stringify({
+            signal,
+            usdt: usdt_balance,
+            tp1_vol: tp1_trade_vol_usdt,
+          }) },
+      ]);
+      return new_orders;
+    }
     if (tp1_opening_count >= max_open_order) {
       // skip level 1
       // notice via telegram to liquid some order manually
@@ -257,6 +269,18 @@ export class SignalTrading {
 
       return new_orders;
     }
+    if (tp2_trade_vol_usdt >= usdt_balance) {
+      console.warn("[WARN] not enough usdt to order: ", signal);
+      this.telegram.send([
+        { type: TlMsgType.Text, text: "Not enough money for tp2" },
+        { type: TlMsgType.Code, text: JSON.stringify({
+            signal,
+            usdt: usdt_balance,
+            tp2_vol: tp2_trade_vol_usdt,
+          }) },
+      ]);
+      return new_orders;
+    }
 
     const tp2_orders: BinanceOrderResponse[] = await this.createSmartBuyOrder(
       {
@@ -285,6 +309,20 @@ export class SignalTrading {
 
       return new_orders;
     }
+    if (tp3_trade_vol_usdt >= usdt_balance) {
+      console.warn("[WARN] not enough usdt to order: ", signal);
+      this.telegram.send([
+        { type: TlMsgType.Text, text: "Not enough money for tp3" },
+        { type: TlMsgType.Code, text: JSON.stringify({
+            signal,
+            usdt: usdt_balance,
+            tp3_vol: tp3_trade_vol_usdt,
+          }) },
+      ]);
+      return new_orders;
+    }
+
+
     const tp3_orders: BinanceOrderResponse[] = await this.createSmartBuyOrder(
       {
         ...spot_order,
@@ -360,7 +398,7 @@ export class SignalTrading {
     const maxPriceDecimal = BinanceTradingEndpointHelper.step_size_2_max_decimal(new BigNumber(priceFilter.tickSize).toNumber());
 
     const origQtty = new BigNumber(primary_order.origQty);
-    const FEE_PERCENT = 0.5;
+    const FEE_PERCENT = 0.5; // taker 0.075% => not work
     const ocoQtty = origQtty.minus(origQtty.multipliedBy(FEE_PERCENT / 100)); // real owned amount = primary_order.executedQtty - transaction fee + some other fee I dont know
     const new_order: BinanceOcoOrderRequest = {
       symbol: primary_order.symbol,
@@ -368,8 +406,8 @@ export class SignalTrading {
       // quantity: new BigNumber(primary_order.executedQty).decimalPlaces(maxVolDecimal).toString(),
       quantity: ocoQtty.decimalPlaces(maxVolDecimal).toString(), // Use this if buy limit
       price: tp.decimalPlaces(maxPriceDecimal).toString(), // of the limit order
-      stopPrice: sl.plus(new BigNumber(primary_order.price).minus(sl).multipliedBy(5 / 100)).decimalPlaces(maxPriceDecimal).toString(), // stopPrice is come earlier 5%
-      stopLimitPrice: sl.decimalPlaces(maxPriceDecimal).toString(), // of the stop limit
+      stopPrice: sl.decimalPlaces(maxPriceDecimal).toString(), // of the stop limit ==> It's trigger the order will be placed
+      stopLimitPrice: sl.plus(new BigNumber(primary_order.price).minus(sl).multipliedBy(5 / 100)).decimalPlaces(maxPriceDecimal).toString(), // stopPrice is come earlier 5% ==> It's price we will sell
       stopLimitTimeInForce: 'GTC', // https://academy.binance.com/en/articles/understanding-the-different-order-types
       newOrderRespType: "RESULT" // Returns more complete info of the order. ACK, RESULT, or FULL
     };
