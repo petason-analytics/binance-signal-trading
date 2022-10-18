@@ -70,6 +70,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/blockchain/tsconfig.lib.json"
       }
+    },
+    "new-pair-frontrun": {
+      "type": "application",
+      "root": "apps/new-pair-frontrun",
+      "entryFile": "main",
+      "sourceRoot": "apps/new-pair-frontrun/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/new-pair-frontrun/tsconfig.app.json"
+      }
     }
   }
 }

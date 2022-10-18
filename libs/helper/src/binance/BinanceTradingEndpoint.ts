@@ -14,6 +14,12 @@ import { AppError } from "@lib/helper/errors/base.error";
 import BigNumber from "bignumber.js";
 
 
+type BinanceWsRequest = {
+  id: number,
+  method: string,
+  params: any[],
+}
+
 class BinanceTradingEndpoint implements TradingEndpoint {
   public client;
   public ready = false;
@@ -35,8 +41,9 @@ class BinanceTradingEndpoint implements TradingEndpoint {
     // Authenticated client, can make signed calls
     this.client = Binance({
       apiKey: process.env.BINANCE_API_KEY,
-      apiSecret: process.env.BINANCE_API_SECRET
+      apiSecret: process.env.BINANCE_API_SECRET,
       // getTime: xxx,
+      wsBase: process.env.BINANCE_WS,
     });
 
     this.it_work().then(worked => {
@@ -245,6 +252,9 @@ class BinanceTradingEndpoint implements TradingEndpoint {
   }
 }
 
+const BinanceTmpCache = {
+  AIId: 1, // auto increment id
+};
 export class BinanceTradingEndpointHelper {
   static async getExchangeFilters(symbol: string) {
     const exchangeInfo = await BinanceTradingEndpoint.getInstance().get_symbol_exchange_info(symbol);
@@ -333,6 +343,26 @@ export class BinanceTradingEndpointHelper {
 
   static step_size_2_max_decimal(step_size: number): number {
     return Math.floor(Math.abs(Math.log10(step_size)));
+  }
+
+  static get_binance_symbol(base: string, quote: string): string {
+    return `${base}${quote}`;
+  }
+
+  static get_binance_ws_symbol(base: string, quote: string): string {
+    return this.get_binance_symbol(base, quote).toLowerCase();
+  }
+
+  static getNextWsMsgId() {
+    return ++BinanceTmpCache.AIId
+  }
+
+  static makeWsMsg(method: string, params: any[]): BinanceWsRequest {
+    return this.makeWsMsgWithId(this.getNextWsMsgId(), method, params);
+  }
+
+  static makeWsMsgWithId(id: number, method: string, params: any[]): BinanceWsRequest {
+    return { id, method, params };
   }
 }
 

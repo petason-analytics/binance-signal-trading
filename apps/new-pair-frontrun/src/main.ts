@@ -1,36 +1,23 @@
 import { NestApplicationOptions, ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import * as fs from 'fs';
-import { AppLogger } from '@lib/helper/logger';
-import { buildCorsOption } from '`@lib/helper`/cors';
+import { ConfigService } from '@nestjs/config';
+import { NewPairFrontrunModule } from './new-pair-frontrun.module';
+import { getAppLogger } from '@lib/helper/logger';
+import { buildCorsOption } from '@lib/helper/cors';
 import { AppErrorsInterceptor } from '@lib/helper/interceptor/errors.interceptor';
-import { PrismaService } from '@lib/prisma';
 import { Sentry } from '@lib/helper/service/sentry.service';
-import { AdminModule } from './admin.module';
 
 async function bootstrap() {
-  // Currently we use Express platform for work with stable apolo graphql
-  const logger = new AppLogger();
+  const logger = getAppLogger();
 
   const nestAppOpt: NestApplicationOptions = {
     logger: logger,
   };
 
-  const env = process.env.NODE_ENV;
-  const ssl = process.env.APP_SSL == 'true';
-  // Add https for development only
-  if (ssl) {
-    nestAppOpt.httpsOptions = {
-      key: fs.readFileSync('../../secrets/server.' + env + '.key'),
-      cert: fs.readFileSync('../../secrets/server.' + env + '.crt'),
-    };
-  }
-
-  const app = await NestFactory.create(AdminModule, nestAppOpt);
+  const app = await NestFactory.create(NewPairFrontrunModule, nestAppOpt);
 
   const configService = app.get(ConfigService);
-  const port = configService.get('ADMIN_PORT');
+  const port = configService.get('PAIRFRONT_APP_PORT');
 
   app.enableCors(buildCorsOption(configService, logger));
 
@@ -41,12 +28,8 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe());
 
-  // https://docs.nestjs.com/recipes/prisma#issues-with-enableshutdownhooks
-  const prismaService: PrismaService = app.get(PrismaService);
-  prismaService.enableShutdownHooks(app);
-
   await app.listen(port).then(() => {
-    logger.warn(`🚀 Server ready at :${port} :${env} ${ssl ? ':ssl' : ''} 🚀`);
+    logger.warn(`🚀 Server ready at :${port} :${process.env.NODE_ENV} 🚀`);
     onBootstrapped(app, logger);
   });
 

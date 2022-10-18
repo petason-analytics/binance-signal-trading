@@ -1,9 +1,20 @@
-# Overview
+# Binance trading from signal + quick trade on new pair listing
 
+# TradeFromSignal:Overview
 => Extractor (by Telethon): crawl new Telegram message
 => send to rabbitmq
 => Nestjs receive queue msg
 => Nestjs do place order on Binance
+
+# TradeOnNewPairListing:Overview
+=> configured the pair on in memory, don't need DB
+=> NestJs listen for new pair listing via websocket api
+=> Send event via event emitter (don't need a queue)
+=> Nestjs receive event msg
+=> Nestjs do place order on Binance
+=> open some orders asap at the market price
+=> Set TP at the 2x of buy price
+=> Ignore and handle SL manually
 
 > https://bitbucket.org/bitqtradebuddy/telegram-signal-extractor-py/src/master/
 
